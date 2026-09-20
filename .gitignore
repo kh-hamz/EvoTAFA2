@@ -1,0 +1,24 @@
+# Immutable downloads and generated research artifacts are not source code.
+/archive/
+/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.env
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+/artifacts/**
+!/artifacts/**/
+!/artifacts/**/.gitkeep
+/runs/**
+!/runs/.gitkeep
+/reports/generated/
+/docs
+
+/EvoTAFA2/

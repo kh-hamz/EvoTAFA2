@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:edgefl:config:1.0",
+  "title": "Phase A foundation configuration",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "scope": {
+      "const": "phase_a"
+    },
+    "protocol_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{2,63}$"
+    },
+    "protocol_document": {
+      "const": "docs/research_protocol.md"
+    },
+    "dataset": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "smoke": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "primary",
+        "smoke"
+      ],
+      "additionalProperties": false
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "archive": {
+          "const": "archive"
+        },
+        "manifests": {
+          "const": "data/manifests"
+        },
+        "processed": {
+          "const": "data/processed"
+        },
+        "clients": {
+          "const": "data/clients"
+        },
+        "artifacts": {
+          "const": "artifacts"
+        },
+        "reports": {
+          "const": "reports/generated"
+        },
+        "runs": {
+          "const": "runs"
+        }
+      },
+      "required": [
+        "archive",
+        "manifests",
+        "processed",
+        "clients",
+        "artifacts",
+        "reports",
+        "runs"
+      ],
+      "additionalProperties": false
+    },
+    "randomness": {
+      "type": "object",
+      "properties": {
+        "global_split_seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "matched_seeds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "global_split_seed",
+        "matched_seeds"
+      ],
+      "additionalProperties": false
+    },
+    "research_defaults": {
+      "type": "object",
+      "properties": {
+        "tasks": {
+          "const": [
+            "binary",
+            "multiclass"
+          ]
+        },
+        "protocols": {
+          "const": [
+            "session_time_closed_set",
+            "whole_capture_generalization"
+          ]
+        },
+        "global_split": {
+          "type": "object",
+          "properties": {
+            "client_pool": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "trusted": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "selection_validation": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "final_test": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "client_pool",
+            "trusted",
+            "selection_validation",
+            "final_test"
+          ],
+          "additionalProperties": false
+        },
+        "local_validation_fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "clients": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "participation": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "dirichlet_alphas": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "hidden_layers": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minItems": 1
+        },
+        "optimizer": {
+          "const": "adam"
+        },
+        "learning_rate": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "batch_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "local_epochs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "loss": {
+          "enum": [
+            "unweighted_cross_entropy",
+            "class_weighted_cross_entropy"
+          ]
+        },
+        "nsga_population": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "nsga_generations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "malicious_fraction": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "attack_start_round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "external_dataset": {
+          "const": "CICIoT2023"
+        }
+      },
+      "required": [
+        "tasks",
+        "protocols",
+        "global_split",
+        "local_validation_fraction",
+        "clients",
+        "participation",
+        "dirichlet_alphas",
+        "hidden_layers",
+        "optimizer",
+        "learning_rate",
+        "batch_size",
+        "local_epochs",
+        "rounds",
+        "loss",
+        "nsga_population",
+        "nsga_generations",
+        "malicious_fraction",
+        "attack_start_round",
+        "external_dataset"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "scope",
+    "protocol_id",
+    "protocol_document",
+    "dataset",
+    "paths",
+    "randomness",
+    "research_defaults"
+  ],
+  "additionalProperties": false
+}

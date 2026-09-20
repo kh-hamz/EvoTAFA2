@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "scope": "phase_a",
+  "protocol_id": "edgeiiot-fl-v1",
+  "protocol_document": "docs/research_protocol.md",
+  "dataset": {
+    "primary": "archive/Edge-IIoTset dataset/Selected dataset for ML and DL/DNN-EdgeIIoT-dataset.csv",
+    "smoke": "archive/Edge-IIoTset dataset/Selected dataset for ML and DL/ML-EdgeIIoT-dataset.csv"
+  },
+  "paths": {
+    "archive": "archive",
+    "manifests": "data/manifests",
+    "processed": "data/processed",
+    "clients": "data/clients",
+    "artifacts": "artifacts",
+    "reports": "reports/generated",
+    "runs": "runs"
+  },
+  "randomness": {
+    "global_split_seed": 42,
+    "matched_seeds": [
+      11,
+      22,
+      33,
+      44,
+      55
+    ]
+  },
+  "research_defaults": {
+    "tasks": [
+      "binary",
+      "multiclass"
+    ],
+    "protocols": [
+      "session_time_closed_set",
+      "whole_capture_generalization"
+    ],
+    "global_split": {
+      "client_pool": 0.7,
+      "trusted": 0.075,
+      "selection_validation": 0.075,
+      "final_test": 0.15
+    },
+    "local_validation_fraction": 0.2,
+    "clients": 10,
+    "participation": 1,
+    "dirichlet_alphas": [
+      0.5,
+      0.1
+    ],
+    "hidden_layers": [
+      128,
+      64
+    ],
+    "optimizer": "adam",
+    "learning_rate": 0.001,
+    "batch_size": 256,
+    "local_epochs": 1,
+    "rounds": 100,
+    "loss": "unweighted_cross_entropy",
+    "nsga_population": 24,
+    "nsga_generations": 8,
+    "malicious_fraction": 0.2,
+    "attack_start_round": 11,
+    "external_dataset": "CICIoT2023"
+  }
+}
