@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scope", "archive", "selected", "source_root", "pairings", "label_aliases", "seed", "temporal_block_seconds", "purge_seconds", "session_inactivity_seconds", "panel_per_class", "output"],
+  "properties": {
+    "schema_version": {"const": "phase-b.v1"},
+    "scope": {"const": "phase_b"},
+    "archive": {"type": "string", "minLength": 1},
+    "source_root": {"type": "string", "minLength": 1},
+    "selected": {"type": "object", "additionalProperties": false, "required": ["primary", "smoke"], "properties": {"primary": {"type": "string"}, "smoke": {"type": "string"}}},
+    "pairings": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "minLength": 1}},
+    "label_aliases": {"type": "object", "additionalProperties": {"type": "string"}},
+    "seed": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+    "temporal_block_seconds": {"type": "integer", "minimum": 1},
+    "purge_seconds": {"type": "integer", "minimum": 0},
+    "session_inactivity_seconds": {"type": "integer", "minimum": 1},
+    "panel_per_class": {"type": "integer", "minimum": 1},
+    "output": {"type": "string", "minLength": 1}
+  }
+}

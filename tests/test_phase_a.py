@@ -246,7 +246,8 @@ class ScopeTests(unittest.TestCase):
         for stage in PIPELINES:
             self.assertLessEqual(set(stage.requires), known)
             known.add(stage.name)
-        self.assertEqual([p.name for p in PIPELINES if p.status == "available"], ["foundation"])
+        self.assertEqual({p.phase for p in PIPELINES if p.status == "available"}, {"A", "B"})
+        self.assertTrue(all(p.status == "planned" for p in PIPELINES if p.phase not in ("A", "B")))
 
     def test_training_command_is_unavailable(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as result:

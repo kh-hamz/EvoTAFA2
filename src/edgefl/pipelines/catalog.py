@@ -15,9 +15,13 @@ class PipelineSpec:
 
 PIPELINES = (
     PipelineSpec("foundation", "A", (), ("configuration", "protocol"), ("foundation_run",), "available"),
-    PipelineSpec("audit", "B", ("foundation",), ("immutable_sources",), ("dataset_manifest", "audit_report")),
-    PipelineSpec("provenance", "B", ("audit",), ("dataset_manifest",), ("provenance", "group_manifest")),
-    PipelineSpec("global_split", "B", ("provenance",), ("group_manifest",), ("global_split_manifest",)),
+    PipelineSpec("audit", "B", ("foundation",), ("immutable_sources",), ("registration", "audit_report"), "available"),
+    PipelineSpec("provenance", "B", ("audit",), ("registration",), ("provenance", "candidates"), "available"),
+    PipelineSpec("verify_captures", "B", ("audit", "provenance"), ("pcap", "provenance"), ("evidence",), "available"),
+    PipelineSpec("group", "B", ("provenance", "verify_captures"), ("evidence",), ("groups", "duplicates"), "available"),
+    PipelineSpec("global_split", "B", ("group",), ("groups",), ("split_collection",), "available"),
+    PipelineSpec("trusted_panel", "B", ("global_split",), ("split_collection",), ("panel",), "available"),
+    PipelineSpec("validate_phase_b", "B", ("trusted_panel",), ("phase_b_artifacts",), ("handoff",), "available"),
     PipelineSpec("clients", "C", ("global_split",), ("client_pool",), ("client_manifest", "local_splits")),
     PipelineSpec("preprocessing", "C", ("clients",), ("local_training_manifest",), ("transformer", "feature_contract")),
     PipelineSpec("pretraining_gate", "C", ("preprocessing",), ("all_data_contracts",), ("pretraining_report",)),

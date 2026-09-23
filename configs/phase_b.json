@@ -1,0 +1,45 @@
+{
+  "schema_version": "phase-b.v1",
+  "scope": "phase_b",
+  "archive": "archive",
+  "selected": {
+    "primary": "archive/Edge-IIoTset dataset/Selected dataset for ML and DL/DNN-EdgeIIoT-dataset.csv",
+    "smoke": "archive/Edge-IIoTset dataset/Selected dataset for ML and DL/ML-EdgeIIoT-dataset.csv"
+  },
+  "source_root": "archive/Edge-IIoTset dataset",
+  "pairings": {
+    "Backdoor_attack.csv": "Backdoor_attack.pcap",
+    "DDoS_HTTP_Flood_attack.csv": "DDoS HTTP Flood Attacks.pcap",
+    "DDoS_ICMP_Flood_attack.csv": "DDoS ICMP Flood Attacks.pcap",
+    "DDoS_TCP_SYN_Flood_attack.csv": "DDoS TCP SYN Flood Attacks.pcap",
+    "DDoS_UDP_Flood_attack.csv": "DDoS UDP Flood Attacks.pcap",
+    "MITM_attack.csv": "MITM (ARP spoofing + DNS) Attack.pcap",
+    "OS_Fingerprinting_attack.csv": "OS Fingerprinting attack.pcap",
+    "Password_attack.csv": "Password attacks.pcap",
+    "Port_Scanning_attack.csv": "Port Scanning attack.pcap",
+    "Ransomware_attack.csv": "Ransomware attack.pcap",
+    "SQL_injection_attack.csv": "SQL injection attack.pcap",
+    "Uploading_attack.csv": "Uploading attack.pcap",
+    "Vulnerability_scanner_attack.csv": "Vulnerability scanner attack.pcap",
+    "XSS_attack.csv": "XSS attacks.pcap",
+    "Distance.csv": "Distance.pcap",
+    "Flame_Sensor.csv": "Flame_Sensor.pcap",
+    "Heart_Rate.csv": "Heart_Rate.pcap",
+    "IR_Receiver.csv": "IR_Receiver.pcap",
+    "Modbus.csv": "Modbus.pcap",
+    "phValue.csv": "phValue.pcap",
+    "Soil_Moisture.csv": "Soil_Moisture.pcap",
+    "Sound_Sensor.csv": "Sound_Sensor.pcap",
+    "Temperature_and_Humidity.csv": "Temperature_and_Humidity.pcap",
+    "Water_Level.csv": "Water_Level.pcap"
+  },
+  "label_aliases": {
+    "OS_Fingerprinting": "Fingerprinting"
+  },
+  "seed": 42,
+  "temporal_block_seconds": 300,
+  "purge_seconds": 30,
+  "session_inactivity_seconds": 60,
+  "panel_per_class": 512,
+  "output": "data/manifests/phase_b"
+}

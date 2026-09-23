@@ -19,6 +19,5 @@ __pycache__/
 /runs/**
 !/runs/.gitkeep
 /reports/generated/
-/docs
 
 /EvoTAFA2/
