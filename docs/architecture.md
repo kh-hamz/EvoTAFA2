@@ -1,9 +1,13 @@
 # Project architecture
 
-Phase B is implemented in separate domain and orchestration modules. See
-[Phase B architecture, contracts, and commands](phase_b.md) for the current dataset
-pipelines. The foundation specification below records the Phase A baseline;
-its planned data boundaries are now implemented for roadmap steps 4-9.
+Active Phase B/C v2 contracts are described in [the stabilization guide](phase_bc_stabilization.md).
+Source verification belongs to the data domain. Future training consumes a verified TrainingReadyBundle.
+
+Phases B and C use separate domain and orchestration modules. See
+[Phase B architecture, contracts, and commands](phase_b.md) and
+[Phase C architecture and commands](phase_c.md). The foundation specification below
+records the Phase A baseline; its data boundaries are implemented through roadmap
+step 13. Phases D-H remain planned.
 
 ## Principles
 
@@ -64,7 +68,7 @@ engine and cannot run a planned stage.
 | clients | Client ownership and local validation | Global holdout reassignment |
 | preprocessing | Training-only fitted transformation and feature contract | Global/client split generation |
 | pretraining_gate | Cross-artifact validation and failure report | Silent repair |
-| baselines | Common initialization and validated training schedules | Test selection |
+| baselines | Common initialization, Phase D clean methods including FLTrust, training diagnostics and learning review | E/F assessment/search implementations, poisoning-resistance claims, final-test selection |
 | attack_assessment | Controlled attack harness plus separate defense scorer | Leaking simulator truth to scorer |
 | optimization | Fitness, evolutionary search, selected aggregation | Training client models internally |
 | experiments | Matched scenario orchestration, ablations, external replication | Hidden configuration changes |
@@ -75,6 +79,17 @@ Although attack_assessment is one roadmap milestone, its future attack harness a
 scorer must be separate modules with separate inputs. Future rounds similarly
 compose trainer, scorer, optimizer, and aggregator instead of embedding them in a
 single FL-loop file. Final evaluation remains a separate entrypoint.
+
+The [readiness specification](phase_d_readiness_refinement_plan.md) assigns fixed
+assessment-based comparisons to E and NSGA-II to F. Preserve the existing catalogue
+order: pretraining_gate -> baselines -> attack_assessment -> optimization -> experiments.
+Baseline execution must not require later scorers or fake assessments. FedProx changes
+local optimization; coordinate-wise aggregation need not expose scalar client weights.
+
+FLTrust is a D comparator with a separate server-reference operation using the permitted
+trusted resource. This operation is composed with the round engine; it does not expand
+ordinary client-trainer access. Record its procedure, access budget, normalization and
+server cost. Method-specific requirements belong at their implementation boundaries.
 
 ## Dependencies and artifacts
 
@@ -87,6 +102,11 @@ Large arrays/models live in artifacts, not JSON records. JSON metadata reference
 content hashes and schema versions. Future loaders validate hashes, roles, compatibility,
 and stage gates before returning data. JSON itself is metadata, not a tensor format.
 
+Real-data experiment entrypoints and resumed runs call the existing load_training_ready
+with explicit dataset/task/fold/scenario expectations. Consume its verified bundle and
+fail on absent, stale, incompatible or ineligible artifacts. Do not add a generic workflow
+engine, new foundation record fields, or another data-loading bypass for this refinement.
+
 ## Debugging and failure isolation
 
 Every stage must be independently invokable with explicit upstream manifests.
@@ -98,6 +118,22 @@ not become a successful artifact. Avoid a run-all command until individual stage
 Future structured logs include run ID, stage, event, round/client identity when
 applicable, elapsed time and artifact references. Never log raw addresses or payloads.
 Phase A writes only foundation events. Future stages add their own event files.
+
+Phase D establishes the [common diagnostic meanings](interfaces.md#future-round-diagnostics)
+through the existing RoundResult.diagnostics reference. Trainers own local measurements,
+scorers and aggregators own their stage measurements, and orchestration combines their
+references with selection-evaluation results. Keep nested timing explicit, failures and
+unsupported metrics visible, and final-test data outside development paths.
+
+Keep software correctness, real-data acceptance, and clean-learning review as separate
+evidence. An unexplained learning failure blocks advancement of that condition; a
+documented negative finding can proceed with limitations after investigation, but cannot
+override a failed software or data gate. Synthetic tests are development evidence only.
+
+Training/evaluation profiling belongs to D. Actual candidate-evaluation and completed
+search profiling belongs to F and is required before the full G matrix. No Phase F
+profiler is required to complete D, and profiling must not modify production checkpoints
+or silently select a new search budget.
 
 ## Reproducibility
 

@@ -1,9 +1,13 @@
 # Module and data-access contracts
 
-Phase B is implemented in separate domain and orchestration modules. See
-[Phase B architecture, contracts, and commands](phase_b.md) for the current dataset
-pipelines. The foundation specification below records the Phase A baseline;
-its planned data boundaries are now implemented for roadmap steps 4-9.
+Active Phase B/C v2 contracts and load_training_ready are described in the
+[stabilization guide](phase_bc_stabilization.md). Phase A 1.0 records remain compatible.
+
+Phases B and C are implemented in separate domain and orchestration modules. See
+[Phase B architecture, contracts, and commands](phase_b.md) and
+[Phase C architecture and commands](phase_c.md). The foundation specification below
+records the Phase A baseline; its runtime data contracts now extend through the
+pretraining gate.
 
 Contract version: 1.0. Python records live in contracts/records.py; structural
 Protocol interfaces live in contracts/interfaces.py. They define boundaries, not
@@ -51,6 +55,7 @@ Data-role checks are application safeguards, not process-level filesystem isolat
 |---|---|---|
 | Preprocessing fitter | Union of actual local-training rows | Local validation, trusted, selection validation, test |
 | Client trainer | Assigned local-training partition; local validation only for declared diagnostics | Global trusted/selection/test data and malicious identity registry |
+| FLTrust server-reference operation | Permitted trusted resource and compatible current global model | Client-private training partitions, selection validation, final test, malicious identity registry |
 | Attack harness | Selected attackable training rows or submitted delta; simulator attack plan | Trusted, selection, final-test modification |
 | Client scorer | Submitted models/deltas and trusted panel | Selection validation, final test, malicious identity registry |
 | Fitness/aggregator | Compatible updates, assessments, prior reputation, trusted resource if needed | Selection validation, final test, malicious identity registry |
@@ -72,6 +77,49 @@ Coordinate median/trimmed mean may return weights = None; requiring a scalar vec
 would incorrectly exclude those baselines. Future algorithms requiring assessments
 must ensure one assessment per valid update. Baselines may use no assessments.
 No concrete trainer, scorer, aggregator, final evaluator, or dataset loader exists yet.
+
+Phase D methods must work without Phase E assessments. Methods needing assessments
+enforce their actual requirements when implemented; never substitute fabricated scores.
+FLTrust computes its server reference through a separate trusted-data operation and
+records its access budget, training procedure, and update normalization. Its normalized
+trust weights describe aggregation of normalized updates, not necessarily raw deltas.
+FedProx's local optimization belongs to the trainer. These requirements do not change
+the existing TrainingRequest, AggregationRequest, or RoundResult Python contracts.
+
+Future real-data experiment entrypoints and resumed runs call load_training_ready with
+explicit dataset, task, fold, and scenario expectations. They consume the returned
+verified bundle; missing/stale/ineligible or mismatched inputs fail without a raw-CSV
+fallback or eligibility override. Synthetic tests cannot replace this entry check.
+
+## Future round diagnostics
+
+Phase D implements these meanings in a versioned artifact referenced by the existing
+RoundResult.diagnostics field; E/F extend it when their features exist. Concrete
+serialization and its version are defined during D implementation. No foundation-record
+fields or versions change in this specification refinement.
+
+| Measurement | Required meaning |
+|---|---|
+| Identity | Run, method, task, fold, scenario, seed, epoch/round, parent/checkpoint, and input artifact identities |
+| Loss | Separate training-objective and evaluation losses; record data role, observation count, and averaging convention. Aggregate observation means using their counts, not an unweighted mean of unequal client means. |
+| Macro-F1 | Use the frozen task vocabulary and record per-class support and the declared undefined-class convention consistently across methods. Do not silently change vocabulary between rounds. |
+| Benign FPR | Benign observations predicted as any attack divided by benign observations; zero benign support is undefined, with an explicit reason. |
+| Update magnitude | L2 norm of each submitted delta and the actual global parameter change using consistent trainable-parameter ordering. Record absolute norm and relative norm against the parent model; a zero parent norm makes the relative value undefined. |
+| Weights | Client-keyed normalized weights where meaningful, with method-specific semantics. Coordinate-wise methods report inapplicable; FLTrust records normalization separately. |
+| Weight change | For comparable normalized vectors, half the L1 distance over the union of consecutive client identities, assigning zero to absent clients. Record participation changes; the first round or incompatible semantics is inapplicable. |
+| Timing | Elapsed round time, cumulative client training time, scoring, aggregation, selection evaluation, and checkpoint I/O. Parallel client totals need not equal elapsed time. Mark nested search timings so they are not added twice. |
+| Failure/support | Explicit rejection, unavailable-metric, and unsuccessful-round reasons. Missing is not zero; retaining a model after failed aggregation is not evidence of convergence. |
+
+The trainer supplies training diagnostics, the scorer/aggregator supplies its own
+measurements, and orchestration links them with separately evaluated selection metrics.
+Keep trusted-panel, training, local-validation, and selection-validation results tagged
+by role. Do not feed selection results into fitness. Final-test metrics are absent from
+development diagnostics. Report initial and subsequent epoch/round measurements.
+
+Phase F adds candidate requests, cache hits, actual model evaluations, invalid candidates,
+construction/inference/evolutionary overhead, total search time, and peak memory. Count
+categories explicitly rather than assuming requests equal evaluations. Profile the actual
+evaluation path with environment/workload identities and separate warm-up costs.
 
 ## Serialization, versions, and evolution
 

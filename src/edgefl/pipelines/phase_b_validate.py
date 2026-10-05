@@ -29,6 +29,7 @@ def execute(config,inputs,dataset):
         paths = {key:artifact(config,metadata[key],key.split("_")[0]) for key in
                  ("provenance","evidence","groups","splits_a","splits_b","panel_a","panel_b")}
         paths["duplicates"] = artifact(config,metadata["groups"],"duplicates")
+        paths["closed_set"] = artifact(config,metadata["splits_a"],"closed_set")
         summaries = {key:read_json(artifact(config,value,"summary")) for key,value in metadata.items()}
         audit = summaries["audit"]["files"][registry["selected"][dataset]]
         summary = validate(paths,summaries,run.directory,config.values["purge_seconds"],

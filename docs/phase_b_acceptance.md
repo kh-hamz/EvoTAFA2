@@ -3,6 +3,10 @@
 Scope: roadmap steps 4–9 only. Phase A's configuration and record contracts are
 preserved; later phases remain unavailable in the command catalogue.
 
+## Current stabilization evidence
+
+This document preserves the original Phase B acceptance results. For the v2 changes, the 89-test result, and the pending real-data recovery checkpoint, see the [2026-10-03 stabilization acceptance report](../reports/generated/phase_bc_stabilization_acceptance_2026-10-03.md).
+
 ## Software checks
 
 `scripts/check_phase_b.py` passes 55 tests, including all 22 Phase A regression tests.

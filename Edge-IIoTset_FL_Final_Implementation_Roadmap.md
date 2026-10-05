@@ -1,5 +1,22 @@
 # Finalized Edge-IIoTset Federated Learning Research Roadmap
 
+## Phase B/C stabilization revision, 2026-10-03
+
+The [agreed stabilization plan](docs/phase_bc_stabilization_plan.md) supersedes universal local binary
+minima and unconditional fifteen-class requirements. Sparse server-scored clients are permitted;
+supported-class Protocol A and binary Protocol B scopes are explicit. Near-IID requires maximum
+relative size deviation 0.10 and maximum total variation 0.05 against the experiment client pool.
+Search exhaustion is unsuccessful, not proof of infeasibility. Phase D requires a fresh source-verified
+v2 training-ready PASS. Capture recovery requires the agreed diagnostic evidence review.
+
+## Phase D readiness refinement, 2026-10-04
+
+The [targeted readiness specification](docs/phase_d_readiness_refinement_plan.md) clarifies
+phase ownership, clean-learning review, common diagnostics, and profiling timing.
+Phase D includes FLTrust but does not depend on Phase E assessments or Phase F search.
+This is a specification revision; implemented availability and Phase A-C contracts are unchanged.
+Real-data experiments remain blocked until their source-verified B-to-C acceptance succeeds.
+
 ## 1. Review conclusion and required improvements
 
 The initial implementation plan provides a strong foundation for preprocessing and reproducibility. It should be extended and corrected before implementation, particularly around provenance, evaluation partitions, poisoning experiments, and the complete NSGA-II lifecycle.
@@ -175,7 +192,7 @@ For NSGA-II, create one deterministic trusted fitness panel per run, targeting a
 - Fix client assignments across aggregation methods for each matched seed.
 - Record retries, repairs, rejected partitions, class proportions, size distributions, and measured heterogeneity.
 
-Preserve the draft’s initial 10,000-observation minimum and binary-support requirements where feasible. If they cannot be satisfied without destroying the intended heterogeneity, reject the configuration and report why.
+Preserve the initial 10,000-observation minimum and group integrity. Apply explicit metric-dependent support policies: server-scored clients may be single-class, while local binary metric profiles declare their own support minima. Report unsuccessful searches and achieved heterogeneity without silently weakening constraints or claiming mathematical infeasibility.
 
 **Deliverable:** Client manifests and distribution diagnostics.
 
@@ -205,12 +222,15 @@ All competing methods within a matched scenario use identical preprocessing. A n
 - Verify that preprocessing used only permitted fitting observations.
 - Demonstrate that manifests regenerate deterministically.
 
-**Gate:** No model experiment proceeds without a passing report.
+**Gate:** Every real-data model experiment requires a fresh source-verified Phase C PASS
+for its dataset, task, fold, and scenario. Synthetic component tests cannot authorize
+real-data experiments. Entry and resume checks use the existing training-ready loader.
 
 ### Phase D — Establish trustworthy learning baselines
 
 **Step 14 — Create common model initializations**
 
+- Before real-data model initialization, load the verified training-ready bundle with explicit dataset, task, fold, and scenario expectations.
 - Instantiate independent binary and multiclass MLPs.
 - Save one initial state per task, matched seed, and feature schema.
 - Start every compared FL method from that same state.
@@ -224,7 +244,13 @@ All competing methods within a matched scenario use identical preprocessing. A n
 - Train the centralized MLP on exactly the union of client-training rows, excluding local holdouts.
 - Verify learning, finite losses, rare-class behavior, and the relationship between training and selection-validation performance.
 
-**Gate:** Investigate unexpectedly perfect performance and failures to learn before interpreting FL results.
+- Record initial and subsequent training and selection-validation measurements, class support, configuration, seed, initialization, and input artifact identities.
+- Compare against the sanity baselines and retain an investigation record for weak learning, instability, or suspiciously perfect performance.
+
+**Gate:** Complete the [clean-learning evidence review](docs/research_protocol.md#clean-learning-evidence-and-review)
+before advancing the condition. Unexplained behavior blocks advancement. An explained
+negative finding may proceed with documented limitations, but cannot override a software
+failure or failed data gate. No universal performance threshold is imposed.
 
 **Step 16 — Verify FedAvg and the round engine**
 
@@ -232,23 +258,36 @@ All competing methods within a matched scenario use identical preprocessing. A n
 - Validate client and round identities, model compatibility, finite updates, and successful-client accounting.
 - Test single-client equivalence and a manually checkable aggregation example.
 - Run near-IID first, then moderate and strong non-IID scenarios.
+- Use the common [diagnostic definitions](docs/interfaces.md#future-round-diagnostics) from the first training-engine implementation.
+- Complete centralized learning review before near-IID FedAvg, then review near-IID before non-IID FedAvg. Review each condition before its downstream experiments.
+
+**Gate:** Record software correctness and clean-learning review separately. Label/size
+balance alone does not establish identical feature distributions or guarantee learning.
 
 Use standard sample-weighted FedAvg as the reference definition. [FedAvg paper](https://proceedings.mlr.press/v54/mcmahan17a.html)
 
 **Step 17 — Establish comparison baselines**
 
-Include:
+Comparison implementation and acceptance belong to the following phases:
 
-- FedAvg.
-- FedProx for heterogeneity.
-- Coordinate-wise median.
-- Coordinate-wise trimmed mean, with a declared trimming fraction and eligibility checks.
-- A fixed-coefficient quality/risk/reputation weighting rule.
-- NSGA-II weighting.
+| Phase | Methods and required evidence |
+|---|---|
+| D | Majority-class, logistic regression, centralized MLP, FedAvg, FedProx, coordinate-wise median, trimmed mean, and FLTrust: correctness, reproducible clean execution, assumptions, and clean-learning review |
+| E | Fixed-coefficient adaptive weighting and frozen client weighting using actual quality, risk, and reputation outputs at Step 23 |
+| F | NSGA-II weighting using actual candidate fitness evaluation and evolutionary search |
+| G | Complete matched comparisons, including adversarial evaluation and the existing experimental matrix |
 
-Add FLTrust as a trusted-data comparator, because the proposed method also benefits from server-held clean data. Give it the same trusted-data access budget and disclose that it uses those data differently. [FedProx](https://arxiv.org/abs/1812.06127), [FLTrust](https://www.ndss-symposium.org/ndss-paper/fltrust-byzantine-robust-federated-learning-via-trust-bootstrapping/)
+FedProx changes local optimization. Median and trimmed mean need not produce scalar
+client weights; trimmed mean requires a declared trimming fraction and eligibility checks.
+FLTrust is required in D and computes a server reference update from the permitted
+trusted resource. Give it the same trusted-data access budget and disclose its different
+use and server computation. Ordinary client trainers do not receive trusted data.
+[FedProx](https://arxiv.org/abs/1812.06127), [FLTrust](https://www.ndss-symposium.org/ndss-paper/fltrust-byzantine-robust-federated-learning-via-trust-bootstrapping/)
 
-**Gate:** Every baseline is reproducible and its assumptions are recorded.
+**Gate:** All Phase D methods have reproducible clean execution, correctness evidence,
+recorded assumptions, and completed clean-learning review. D completion does not require
+E/F algorithms or poisoning-resistance evidence. Evaluate poisoning after the Phase E
+attack harness exists. Do not fabricate quality, risk, or reputation inputs for baselines.
 
 ### Phase E — Build and validate poisoning, quality, and trust
 
@@ -327,6 +366,9 @@ Use two clearly named comparators:
 
 The first tests whether evolutionary search improves over a simple rule using the same information. The second tests whether adapting client weights matters.
 
+Both comparators are implemented and validated in Phase E, after their assessment
+dependencies exist. Their completion is not a Phase D prerequisite.
+
 ### Phase F — Implement the complete NSGA-II aggregator
 
 **Step 24 — Specify chromosomes and feasibility**
@@ -366,6 +408,7 @@ All objectives are minimized:
 - Evaluate the actual aggregated parameters for performance objectives; a weighted average of client scores is not equivalent.
 - Use the same panel and evaluation mode for every candidate in a round.
 - Cache identical candidates.
+- Record candidate requests, cache hits, actual model evaluations, and invalid candidates separately using the common diagnostics.
 - Treat failed or non-finite model evaluations as infeasible.
 - Log objective correlations and the fraction of candidates that are non-dominated.
 
@@ -395,6 +438,7 @@ Risk and historical unreliability may correlate strongly. Their separate value m
 - Retain candidates front by front.
 - Use crowding distance to fill the remaining places in the final accepted front.
 - Stop at the declared generation/evaluation budget.
+- Preserve the declared budget during a run; any revision based on development profiling must be explicit and recorded before main comparisons.
 
 This is a required part of NSGA-II, not an optional optimization detail.
 
@@ -414,8 +458,16 @@ If no finite feasible candidate exists, retain the previous global model and rec
 - Update reputations only after the current selection has used prior reputation.
 - Record selection-validation metrics outside the fitness module.
 - Persist enough state to resume with identical client, attack, and optimizer randomness.
+- Extend the Phase D diagnostic artifact with actual search timings and evaluation counts; keep selection-validation measurements outside fitness and avoid double-counting nested timers.
 
 **Gate:** An interrupted/resumed run matches an uninterrupted run within declared numerical tolerances.
+
+**Profiling requirement:** Before scaling Phase G, measure one representative completed
+NSGA-II round through actual candidate aggregation and model inference. Record hardware,
+software, model, clients, panel size, configuration, evaluation/cache/failure counts,
+candidate construction, inference, evolutionary overhead, total search time, and peak
+memory. Separate initialization/warm-up costs. Publish projected matrix cost and its
+assumptions. Sorting-only or synthetic-objective timings do not satisfy this requirement.
 
 ### Phase G — Run the research experiments
 
@@ -433,7 +485,16 @@ Proceed in this order:
 
 Do not require the proposed method to outperform baselines as a software acceptance criterion. Correctly measured negative results remain valid research outcomes.
 
+This sequence reuses the clean evidence established in D and the measured search path
+from F. Each real-data condition requires its own applicable training-ready PASS and
+clean-learning review; fixture results do not replace either requirement.
+
 **Step 33 — Freeze the main comparison matrix**
+
+**Prerequisite:** The actual Phase F search profile and projected compute costs are
+recorded, and development-based budget revisions are explicit. Full evolutionary
+profiling is not a prerequisite for Phase D. Preserve matched budgets and disclose
+compute accounting; do not silently alter budgets between methods or seeds.
 
 Use:
 
@@ -557,18 +618,22 @@ Include:
 | Leakage control | No duplicated observation or protected session crosses forbidden boundaries |
 | Preprocessing | Fitting rows belong only to actual client training |
 | Client construction | Deterministic ownership, valid support, documented heterogeneity |
-| Baseline correctness | Checkable centralized/FedAvg behavior and reproducible recognized baselines |
+| Real-data model entry/resume | Fresh source-verified Phase C PASS matching dataset, task, fold, and scenario |
+| Baseline correctness | Checkable centralized/FedAvg behavior and reproducible Phase D methods, including FLTrust |
+| Clean-learning review | Applicable condition evidence; unexplained behavior blocks advancement; explained negative findings carry limitations |
 | Attack correctness | Controlled scope, reproducibility, no evaluation-data contamination |
 | Trust correctness | No malicious-identity access; valid support handling; correct temporal ordering |
 | Evolutionary correctness | Feasible repair, known Pareto fronts, crowding edge cases, elitist survival |
 | Round integration | Correct delta aggregation, failure behavior, deterministic resume |
+| Diagnostics and scaling | Consistent role-aware metrics; actual Phase F evaluation profile and recorded budget before the full matrix |
 | Experimental fairness | Matched data/seeds, stated information access, separate compute accounting |
 | Final evaluation | Frozen checkpoints and protocol, paired results, defensible uncertainty |
 
 ## 5. Execution assumptions and stopping conditions
 
 - Begin with single-machine simulation and streaming/chunked data processing. The inspected machine reports 32 GiB RAM and a six-core Ryzen CPU; GPU availability and achievable runtime remain unverified.
-- Profile one representative training round and one NSGA-II round before scheduling the full matrix. Publish projected and actual compute costs.
+- Profile representative training/evaluation costs in D and one completed actual NSGA-II round in F before scheduling the full matrix. Publish projected and actual compute costs, with warm-up costs separate.
+- Population 24 and eight offspring generations remain recorded development defaults. Change budgets only through explicit development-based revisions before main comparisons; final-test scores must not determine them.
 - Treat trusted-data cleanliness as an explicit experimental assumption; test reduced coverage and distribution mismatch.
 - Do not force all fifteen classes into every partition if verified source structure makes that impossible.
 - If provenance remains unresolved for a class, report that limitation and withhold the corresponding generalization claim.

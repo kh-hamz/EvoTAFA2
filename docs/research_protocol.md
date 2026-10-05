@@ -1,8 +1,26 @@
 # Research protocol — edgeiiot-fl-v1
 
+## Data protocol revision: edgeiiot-fl-v2, 2026-10-03
+
+Phase A foundation records remain version 1.0. Active Phase B/C data contracts are v2.
+The [stabilization plan](phase_bc_stabilization_plan.md) permits sparse server-scored clients,
+requires complete local class-exposure tables, names supported-class closed-set scopes and restricts
+unseen-attack Protocol B to binary evaluation. Universal 100/80/20 binary minima are superseded.
+Per-client near-IID size deviation is <=0.10 and original-label total variation against the selected
+client pool is <=0.05. Exhausted search does not prove infeasibility. Recovery requires evidence review.
+Primary hypotheses/endpoints are unchanged; revised data scopes must be reported explicitly.
+
 Status: Phase A research contract established. Numerical defaults remain development
 settings until the Phase H experimental freeze. A changed hypothesis or endpoint
 requires a new protocol revision and a recorded rationale before final-test access.
+
+## Readiness specification refinement, 2026-10-04
+
+The [Phase D readiness specification](phase_d_readiness_refinement_plan.md) clarifies
+phase ownership and development evidence. Foundation record version 1.0, B/C v2 data
+contracts, hypotheses, endpoints, and selected dataset scopes are unchanged. These
+documentation changes are captured in future protocol/source fingerprints; historical
+snapshots are preserved.
 
 ## Primary question and endpoints
 
@@ -41,6 +59,18 @@ weighting, frozen client weighting, NSGA-II, and FLTrust with disclosed trusted-
 FedProx changes local optimization; it is not merely an aggregation weight rule.
 Coordinate-wise methods need not have one scalar weight per client.
 
+Phase D owns the sanity models, FedAvg, FedProx, median, trimmed mean, and FLTrust.
+Its completion requires clean execution, correctness evidence, assumptions, and
+clean-learning review for those methods. Phase E owns fixed-coefficient adaptive and
+frozen client weighting; Phase F owns NSGA-II; Phase G owns the complete matched matrix.
+Phase D completion does not depend on E/F implementations or poisoning evaluation.
+
+FLTrust's server-reference operation uses the permitted trusted resource and records
+its training procedure, access budget, and server cost. It does not grant trusted-data
+access to ordinary client trainers. Match the trusted-data access budget with other
+trusted-data methods and disclose the different use. Baselines receive no fabricated
+quality, risk, or reputation values.
+
 Match global and local manifests, preprocessing, feature order, initialization,
 client availability, local training budget, and attack randomness within each condition.
 Give methods comparable development tuning opportunities and report search cost
@@ -59,11 +89,51 @@ preprocessing. Binary and multiclass share applicable manifests, never target pr
 
 Trusted data is an adaptive optimization resource. It supports client scoring and
 candidate fitness. Selection validation supports tuning and checkpoint selection.
+FLTrust may also use the permitted trusted resource for its server-reference update;
+this is recorded separately from client training and candidate evaluation.
 The locked test is accessible only to the final evaluation stage after protocol freeze.
+
+Every real-data model experiment, including a resumed run, requires a fresh
+source-verified Phase C PASS matching its dataset, task, fold, and scenario through
+load_training_ready. Failed, stale, incompatible, or absent acceptance blocks execution.
+Synthetic component tests do not authorize real-data experiments. Capture-recovery
+approval and real B-to-C acceptance remain separate pending requirements.
 
 The objectives minimize: one minus macro-F1, benign FPR, weighted current risk,
 and weighted historical unreliability. Communication is measured separately.
 Risk and reputation may be redundant; ablations must test their independent value.
+
+## Clean-learning evidence and review
+
+Establish centralized behavior before near-IID FedAvg, then non-IID FedAvg, before
+poisoning and adaptive aggregation. For every condition advanced downstream, retain
+an applicable report identifying its training-ready artifacts, feature variant, task,
+fold, scenario, configuration, seed, initialization, and model checkpoints.
+
+Record initial and subsequent training/evaluation measurements, class support, and
+comparisons with the sanity baselines. Include finite-loss/update checks, known-answer
+aggregation and single-client equivalence evidence where applicable. Investigate weak
+learning, unexplained instability, and suspiciously perfect performance.
+
+The review records evidence, investigation, conclusion, limitations, and one disposition:
+
+- Acceptable learning behavior: the condition may advance.
+- Unresolved behavior: advancement remains blocked.
+- Explained negative finding: the condition may advance with documented limitations
+  and restricted claims after investigation.
+
+An explained negative finding cannot override broken software checks or a failed data
+gate. No universal score threshold, monotonic-improvement requirement, or requirement
+that the proposed method wins is imposed. Near-IID label/size balance does not imply
+identical feature distributions. Empirical stability is not a convergence proof.
+The full Phase G matrix remains in G; this review does not move it into D.
+
+Use the [common diagnostic definitions](interfaces.md#future-round-diagnostics).
+Report training, trusted-panel, and selection-validation measurements separately.
+Selection validation supports review and checkpoint selection; trusted scores reflect
+adaptive optimization. Local metrics lacking required support are explicitly unavailable.
+Across matched seeds, retain individual results and the existing statistical summaries;
+identify the reported checkpoint/round and never mix data roles or scenarios in one curve.
 
 ## Threat model and claim boundaries
 
@@ -94,6 +164,19 @@ Freeze manifests, feature rules, numerical definitions, attack specifications,
 selection rules, tuning budgets and eligible checkpoints before test evaluation.
 Implementation details reserved for later phases must be resolved using development
 evidence, recorded in configuration/protocol revisions, and never chosen from test scores.
+
+Profile ordinary training and evaluation during D. Before scaling G, F must profile
+one representative completed search using actual candidate aggregation and inference.
+Record environment, workload, candidate/cache/evaluation/failure counts, construction,
+inference and search overhead, total time and peak memory, with initialization/warm-up
+separate. Publish projected matrix costs and assumptions alongside measured costs.
+Synthetic fitness or sorting-only benchmarks do not establish actual search cost.
+
+Population 24 and eight offspring generations remain development defaults. Any
+measurement-based budget revision must be explicit before main comparisons, consistent
+with matched comparisons, and recorded with its rationale. No automatic budget changes
+between methods or seeds and no budget selection from final-test results are permitted.
+The existing Phase H final freeze remains the boundary for final-test access.
 
 ## Known feasibility issues handed to Phase B
 

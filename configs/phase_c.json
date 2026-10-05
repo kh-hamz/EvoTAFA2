@@ -1,0 +1,85 @@
+{
+  "schema_version": "phase-c.v2",
+  "scope": "phase_c",
+  "phase_b_config": "configs/phase_b.json",
+  "output": "data/manifests/phase_c",
+  "seed": 42,
+  "clients": 10,
+  "scenarios": {
+    "near_iid": {
+      "kind": "near_iid"
+    },
+    "dirichlet_moderate": {
+      "kind": "dirichlet",
+      "alpha": 0.5
+    },
+    "dirichlet_strong": {
+      "kind": "dirichlet",
+      "alpha": 0.1
+    },
+    "specialist": {
+      "kind": "specialist",
+      "specialists_per_attack": 2
+    }
+  },
+  "max_partition_attempts": 50,
+  "minimum_client_observations": 10000,
+  "minimum_training_observations": 8000,
+  "minimum_groups_per_client": 2,
+  "local_validation_fraction": 0.2,
+  "preprocessing": {
+    "numeric_imputation": "mean",
+    "scaling": "standard",
+    "max_categories": 128,
+    "identifier_payload_exclusions": [
+      "frame.time",
+      "ip.src_host",
+      "ip.dst_host",
+      "tcp.payload",
+      "http.file_data",
+      "Attack_label",
+      "Attack_type",
+      "arp.src.proto_ipv4",
+      "arp.dst.proto_ipv4"
+    ],
+    "strict_shortcut_exclusions": [
+      "tcp.seq",
+      "tcp.ack",
+      "tcp.ack_raw",
+      "tcp.checksum",
+      "icmp.checksum",
+      "icmp.seq_le",
+      "icmp.transmit_timestamp",
+      "udp.stream",
+      "dns.qry.name",
+      "dns.retransmit_request",
+      "dns.retransmit_request_in",
+      "mqtt.msg",
+      "mqtt.msg_decoded_as",
+      "mqtt.topic",
+      "http.request.full_uri",
+      "http.request.uri.query",
+      "http.referer"
+    ]
+  },
+  "support_policy": {
+    "profile": "server_scored",
+    "assigned": {
+      "benign": 0,
+      "attack": 0
+    },
+    "training": {
+      "benign": 0,
+      "attack": 0
+    },
+    "validation": {
+      "benign": 0,
+      "attack": 0
+    }
+  },
+  "closed_set_scope": "supported_classes",
+  "near_iid_limits": {
+    "maximum_size_deviation": 0.1,
+    "maximum_total_variation": 0.05
+  }
+}

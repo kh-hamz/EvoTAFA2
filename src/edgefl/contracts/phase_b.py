@@ -5,7 +5,7 @@ from enum import Enum
 
 from edgefl.contracts.records import ArtifactRef
 
-VERSION = "phase-b.v1"
+VERSION = "phase-b.v2"
 
 
 class EvidenceState(str, Enum):

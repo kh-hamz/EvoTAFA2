@@ -4,7 +4,7 @@ from edgefl.config import workspace_path
 from edgefl.data.config import load
 from edgefl.data.storage import read_json
 
-COMMANDS = ("audit","provenance","verify-captures","group","global-split","trusted-panel","validate-phase-b")
+COMMANDS = ("audit","provenance","verify-captures","diagnose-captures","group","global-split","trusted-panel","validate-phase-b")
 
 
 def add_commands(sub):
@@ -16,6 +16,7 @@ def add_commands(sub):
         dependencies = {
             "audit":("foundation",), "provenance":("audit",),
             "verify-captures":("audit","provenance"), "group":("provenance","evidence"),
+            "diagnose-captures":("audit","provenance"),
             "global-split":("groups",), "trusted-panel":("splits",),
             "validate-phase-b":("audit","provenance","evidence","groups","splits-a","splits-b","panel-a","panel-b"),
         }[name]
@@ -23,6 +24,10 @@ def add_commands(sub):
             parser.add_argument("--"+dependency,required=True)
         if name == "global-split":
             parser.add_argument("--protocol",choices=("A","B"),required=True)
+        if name == "diagnose-captures":
+            parser.add_argument("--capture", action="append", default=[])
+            parser.add_argument("--historical-evidence", action="store_true",
+                                help="Inspect old hashes and sources for diagnosis only; never authorize training")
 
 
 def execute(args):
@@ -30,6 +35,12 @@ def execute(args):
     config = load(workspace_path(root,args.config),root)
     def path(name):
         return workspace_path(root,getattr(args,name))
+    if args.command == "diagnose-captures":
+        from edgefl.pipelines.phase_b_diagnostics import execute
+        completion = execute(config, path("audit"), path("provenance"), args.dataset,
+                             args.capture, args.historical_evidence)
+        return {"completion": completion.relative_to(root).as_posix(), "eligible_for_training": False,
+                "status": "AWAITING_EVIDENCE_REVIEW"}
     if args.command == "audit":
         from edgefl.pipelines.phase_b_audit import execute
         completion = execute(config,path("foundation"))

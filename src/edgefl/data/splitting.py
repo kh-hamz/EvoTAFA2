@@ -128,12 +128,23 @@ def split(groups_path: Path, directory: Path, protocol: str, seed: int, purge: i
                     break
                 supported = narrowed
             stream, out = writer(directory/"closed_set.csv",MANIFEST_FIELDS["splits"])
+            closed_counts, closed_labels, closed_groups = Counter(), defaultdict(Counter), defaultdict(lambda: defaultdict(set))
             with stream:
                 for row in rows(directory/"splits.csv"):
                     if row["group_id"] in excluded_groups:
                         row["partition"], row["reason"] = "excluded", "unsupported_closed_set_group"
                     out.writerow(row)
+                    closed_counts[row["partition"]] += 1
+                    if row["partition"] in ROLES:
+                        closed_labels[row["label"]][row["partition"]] += 1
+                        closed_groups[row["label"]][row["partition"]].add(row["group_id"])
             reports["protocol_a"]["closed_set_manifest_classes"] = sorted(supported)
+            reports["protocol_a"]["closed_set_counts"] = dict(closed_counts)
+            reports["protocol_a"]["closed_set_class_counts"] = {label: dict(counts) for label, counts in sorted(closed_labels.items())}
+            reports["protocol_a"]["closed_set_independent_groups"] = {label: {role: len(groups) for role, groups in roles.items()}
+                                                                     for label, roles in closed_groups.items()}
+            reports["protocol_a"]["closed_set_feasible"] = "Normal" in supported and len(supported) >= 2 and all(
+                closed_labels[label][role] for label in supported for role in ROLES)
         return {"protocol":protocol,"derived_split_seed":split_seed,"folds":reports,
                 "unsupported_captures":sorted(set(expected_captures)-set(by_capture)),
                 "ineligible_attack_folds_without_benign":attacks if not benign else [],

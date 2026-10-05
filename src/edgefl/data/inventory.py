@@ -43,7 +43,7 @@ def register(root: Path, values: dict, progress=lambda **kw: None) -> dict:
         raise ValueError("Selected/source CSV missing from registry")
     if len({p["pcap"] for p in pairs}) != len(pairs):
         raise ValueError("A capture cannot be paired with multiple source CSVs")
-    return {"schema_version": "phase-b.v1", "files": entries, "pairs": pairs,
+    return {"schema_version": "phase-b.v2", "files": entries, "pairs": pairs,
             "selected": values["selected"], "unpaired_csv": sorted(registered_csv - paired - selected)}
 
 
