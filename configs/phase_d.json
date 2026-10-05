@@ -1,0 +1,20 @@
+{
+  "schema_version": "phase-d.v1",
+  "scope": "phase_d",
+  "phase_c_config": "configs/phase_c.json",
+  "output": "runs/phase_d",
+  "variant": "strict",
+  "device": "cuda",
+  "threads": 6,
+  "seeds": [11, 22, 33, 44, 55],
+  "hidden_layers": [128, 64],
+  "learning_rate": 0.001,
+  "batch_size": 256,
+  "local_epochs": 1,
+  "centralized_epochs": 100,
+  "rounds": 100,
+  "participation": 1.0,
+  "fedprox_mu": 0.01,
+  "trim_fraction": 0.2,
+  "root_epochs": 1
+}
