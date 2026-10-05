@@ -8,10 +8,13 @@ Phase B implements source registration, streaming audits, provenance and capture
 verification, isolated groups, both global split protocols, trusted panels, and
 the final dataset gate. Phase C implements group-preserving client assignment,
 client-local validation, frozen training-only preprocessing, and the pretraining gate.
-Learning remains outside scope.
+Phase D implements clean centralized and federated baselines, diagnostics, resume and
+learning review. Real-data model execution remains blocked until the B-to-C gate passes.
+Phases E-H remain planned.
 
 Read [Phase B architecture and commands](docs/phase_b.md) for execution and debugging.
 Read [Phase C architecture and commands](docs/phase_c.md) for client-data execution.
+Read [Phase D pipelines](docs/phase_d.md) and [acceptance evidence](docs/phase_d_acceptance.md) for learning execution and its current limits.
 
 ## Start here
 
@@ -34,6 +37,7 @@ It supersedes the older start/workflow documents where they conflict.
     .\.venv\Scripts\python.exe scripts/edgefl.py pipelines
     .\.venv\Scripts\python.exe scripts/check_phase_a.py
     .\.venv\Scripts\python.exe scripts/check_phase_c.py
+    .\.venv\Scripts\python.exe scripts/check_phase_d.py
     .\.venv\Scripts\python.exe scripts/edgefl.py init-run --seed 11
 
 The project-local environment was created during Phase A setup. Recreating it is

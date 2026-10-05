@@ -76,7 +76,9 @@ Aggregator.aggregate receives an AggregationRequest and returns RoundResult.
 Coordinate median/trimmed mean may return weights = None; requiring a scalar vector
 would incorrectly exclude those baselines. Future algorithms requiring assessments
 must ensure one assessment per valid update. Baselines may use no assessments.
-No concrete trainer, scorer, aggregator, final evaluator, or dataset loader exists yet.
+Phase D supplies the concrete client trainer, baseline aggregators, server-reference
+operation and verified learning-data adapter. The Phase E client scorer and final
+evaluator remain unimplemented. See [Phase D pipelines](phase_d.md).
 
 Phase D methods must work without Phase E assessments. Methods needing assessments
 enforce their actual requirements when implemented; never substitute fabricated scores.

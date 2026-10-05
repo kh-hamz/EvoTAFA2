@@ -7,7 +7,8 @@ Phases B and C use separate domain and orchestration modules. See
 [Phase B architecture, contracts, and commands](phase_b.md) and
 [Phase C architecture and commands](phase_c.md). The foundation specification below
 records the Phase A baseline; its data boundaries are implemented through roadmap
-step 13. Phases D-H remain planned.
+step 13. Phase D now adds the [learning domain and independent pipelines](phase_d.md).
+Phases E-H remain planned; real-data D acceptance remains subject to the data gate.
 
 ## Principles
 

@@ -9,9 +9,10 @@ subject to upstream acceptance.
 ## Supported foundation environment
 
 Python 3.11+ is declared; Phase A was executed with Python 3.12.6 on Windows.
-The only direct runtime dependency is jsonschema 4.23.0. requirements.lock records
-its installed dependency versions. Scientific/training packages are deliberately
-not installed until their phases need them. No global Python packages are modified.
+The foundation dependency is jsonschema 4.23.0; requirements.lock preserves that
+environment. Phase D's optional training dependencies and exact installed versions
+are separate in requirements-phase-d.lock. See [Phase D setup](phase_d.md). No global
+Python packages are modified.
 
 From the project root in PowerShell:
 
@@ -103,12 +104,14 @@ planned pipelines. Fail loudly on unsupported stages instead of producing empty 
 
 ## Next implementation boundary
 
-Phase D is the next software boundary, but it cannot execute on the current real-data
+Phase D software is implemented, but it cannot execute on the current real-data
 artifacts: Phase B validation is FAIL, so no real Phase C pretraining PASS exists.
 The evidence limitation must be resolved and Phases B-C rerun before real-data model
 experiments. Capture-recovery approval remains a separate checkpoint. Synthetic component
 tests may support development without changing that requirement.
-Phase D remains planned and no training command is available.
+Phase D exposes separate learning commands described in [its guide](phase_d.md).
+There is no generic train command. Phases E-H remain planned, pending applicable
+Phase D acceptance and separate implementation authorization.
 
 Every future real-data experiment entrypoint, including resume, must call
 load_training_ready from edgefl.client_data.storage with explicit dataset, task, fold,

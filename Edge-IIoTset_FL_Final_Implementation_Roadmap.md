@@ -1,5 +1,13 @@
 # Finalized Edge-IIoTset Federated Learning Research Roadmap
 
+## Phase D software implementation, 2026-10-05
+
+Steps 14-17 now have [independent learning pipelines](docs/phase_d.md) and
+[software acceptance evidence](docs/phase_d_acceptance.md). The 107-test suite passes,
+including A-C regressions and CPU/CUDA fixture checks. Real-data D acceptance remains
+blocked by the unresolved B-to-C prerequisite; synthetic results do not authorize it.
+Phases E-H remain planned. The dated refinements below retain their historical context.
+
 ## Phase B/C stabilization revision, 2026-10-03
 
 The [agreed stabilization plan](docs/phase_bc_stabilization_plan.md) supersedes universal local binary
