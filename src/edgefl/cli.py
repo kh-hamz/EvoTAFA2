@@ -1,4 +1,4 @@
-"""Research foundation plus independently executable Phase B and Phase C commands."""
+"""Research foundation plus independent Phase B, C and D commands."""
 
 import argparse
 import json
@@ -12,6 +12,9 @@ from edgefl.pipelines.phase_b_cli import COMMANDS, add_commands, execute as exec
 from edgefl.pipelines.phase_c_cli import (COMMANDS as PHASE_C_COMMANDS,
                                           add_commands as add_phase_c_commands,
                                           execute as execute_phase_c)
+from edgefl.pipelines.phase_d_cli import (COMMANDS as PHASE_D_COMMANDS,
+                                         add_commands as add_phase_d_commands,
+                                         execute as execute_phase_d)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -26,8 +29,13 @@ def main(argv: list[str] | None = None) -> int:
     initialize.add_argument("--seed", type=int, default=11)
     add_commands(sub)
     add_phase_c_commands(sub)
+    add_phase_d_commands(sub)
     args = parser.parse_args(argv)
     try:
+        if args.command in PHASE_D_COMMANDS:
+            result = execute_phase_d(args)
+            print(json.dumps(result, indent=2))
+            return 1 if result.get("status") == "FAIL" else 0
         if args.command in PHASE_C_COMMANDS:
             result = execute_phase_c(args)
             print(json.dumps(result, indent=2))
@@ -48,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
             result = {"run_directory": str(destination), "eligible_for_training": False}
         print(json.dumps(result, indent=2))
         return 0
-    except (ConfigurationError, OSError, ValueError) as exc:
+    except (ConfigurationError, OSError, ValueError, ImportError, RuntimeError) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 2
 
