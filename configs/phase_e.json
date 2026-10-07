@@ -1,0 +1,20 @@
+{
+  "schema_version": "phase-e.v1",
+  "scope": "phase_e",
+  "phase_d_config": "configs/phase_d.json",
+  "output": "runs/phase_e",
+  "compromised_fraction": 0.2,
+  "label_fraction": 0.3,
+  "activation_round": 11,
+  "intermittent_period": 5,
+  "update_scale": 5.0,
+  "expertise_support_scale": 50.0,
+  "reputation_initial": 0.5,
+  "reputation_retention": 0.9,
+  "weight_floor": 0.000001,
+  "minimum_valid_clients": 3,
+  "fit_seeds": [101, 102],
+  "audit_seed": 103,
+  "lower_quantile": 0.5,
+  "upper_quantile": 0.99
+}

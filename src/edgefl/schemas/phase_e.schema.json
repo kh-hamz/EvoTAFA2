@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scope", "phase_d_config", "output", "compromised_fraction", "label_fraction", "activation_round", "intermittent_period", "update_scale", "expertise_support_scale", "reputation_initial", "reputation_retention", "weight_floor", "minimum_valid_clients", "fit_seeds", "audit_seed", "lower_quantile", "upper_quantile"],
+  "properties": {
+    "schema_version": {"const": "phase-e.v1"},
+    "scope": {"const": "phase_e"},
+    "phase_d_config": {"type": "string", "minLength": 1},
+    "output": {"type": "string", "minLength": 1},
+    "compromised_fraction": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+    "label_fraction": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "activation_round": {"type": "integer", "minimum": 2},
+    "intermittent_period": {"type": "integer", "minimum": 1},
+    "update_scale": {"type": "number", "exclusiveMinimum": 1},
+    "expertise_support_scale": {"type": "number", "exclusiveMinimum": 0},
+    "reputation_initial": {"type": "number", "minimum": 0, "maximum": 1},
+    "reputation_retention": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+    "weight_floor": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "minimum_valid_clients": {"type": "integer", "minimum": 3},
+    "fit_seeds": {"const": [101, 102]},
+    "audit_seed": {"const": 103},
+    "lower_quantile": {"const": 0.5},
+    "upper_quantile": {"const": 0.99}
+  }
+}
