@@ -18,7 +18,7 @@ def accepted_review(config, path, subject_path=None, memo=None):
 
 def check_acceptance(config, path, memo=None):
     """Recompute the existing E gate from its reviewed evidence and current tests."""
-    from edgefl.pipelines.phase_e_validate import validate_scope
+    from edgefl.pipelines.phaseE.phase_e_validate import validate_scope
     memo = {} if memo is None else memo
     acceptance = load_stage(config, path, "validate-phase-e", memo=memo)
     key = ("current_e_acceptance", path.resolve())

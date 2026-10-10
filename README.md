@@ -10,11 +10,15 @@ the final dataset gate. Phase C implements group-preserving client assignment,
 client-local validation, frozen training-only preprocessing, and the pretraining gate.
 Phase D implements clean centralized and federated baselines, diagnostics, resume and
 learning review. Real-data model execution remains blocked until the B-to-C gate passes.
-Phases E-H remain planned.
+Phase E implements controlled attacks, trusted quality/expertise, calibrated risk, temporal
+reputation, and fixed adaptive/frozen weighting. Phase F adds pymoo NSGA-II aggregation,
+actual-model fitness, search replay and profiling. Phases G-H remain planned.
 
 Read [Phase B architecture and commands](docs/phase_b.md) for execution and debugging.
 Read [Phase C architecture and commands](docs/phase_c.md) for client-data execution.
 Read [Phase D pipelines](docs/phase_d.md) and [acceptance evidence](docs/phase_d_acceptance.md) for learning execution and its current limits.
+Read [Phase E pipelines](docs/phase_e.md) for trust execution, configuration and acceptance boundaries.
+Read [Phase F pipelines](docs/phase_f.md) and [acceptance](docs/phase_f_acceptance.md) for evolutionary aggregation.
 
 ## Start here
 
@@ -38,6 +42,7 @@ It supersedes the older start/workflow documents where they conflict.
     .\.venv\Scripts\python.exe scripts/check_phase_a.py
     .\.venv\Scripts\python.exe scripts/check_phase_c.py
     .\.venv\Scripts\python.exe scripts/check_phase_d.py
+    .\.venv\Scripts\python.exe scripts/check_phase_e.py
     .\.venv\Scripts\python.exe scripts/edgefl.py init-run --seed 11
 
 The project-local environment was created during Phase A setup. Recreating it is

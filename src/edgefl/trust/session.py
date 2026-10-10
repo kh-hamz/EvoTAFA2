@@ -43,18 +43,22 @@ def validate_submission(root, update, expected, parent, count):
 
 
 class TrustSession(BaselineSession):
-    def __init__(self, config, data, directory, comp, data_ref, method, seed, *, settings, metadata, plan, calibration, bindings):
+    def __init__(self, config, data, directory, comp, data_ref, method, seed, *, settings, metadata, plan, calibration, bindings,
+                 policy=None, participation_schedule=None, trusted_binding=None):
+        from edgefl.trust.policies import TrustPolicy
+        self.policy = policy or TrustPolicy()
+        self.participation_schedule = participation_schedule
         super().__init__(config, data, directory, comp, data_ref, method, seed)
         self.settings, self.plan, self.calibration, self.bindings = settings, plan, calibration, bindings
         self.profiles = metadata.spec["profiles"]
         if sorted(self.counts) != plan["clients"] or any(self.counts[c] != self.profiles[c]["count"] for c in self.counts):
             raise ValueError("Attack/metadata client population mismatch")
         self.trainer = AttackTrainer(self.trainer, plan)
-        self.reputation = ReputationStore(self.counts, settings["reputation_initial"], settings["reputation_retention"])
+        self.reputation = ReputationStore(self.counts, settings["reputation_initial"] if self.policy.reputation else 1., settings["reputation_retention"])
         self.frozen = None
         self.effective_count = 0
         self.round_artifacts = {}
-        self.trusted_ref = PartitionRef(data_ref, Partition.TRUSTED)
+        self.trusted_ref = trusted_binding or PartitionRef(data_ref, Partition.TRUSTED)
         originals = [r["original"] for r in metadata.rows("trusted")]
         vocabulary = sorted(set(originals) | {name for p in self.profiles.values() for name in p["support"]})
         self.specialist = metadata.spec["declared_specialist_scenario"]
@@ -63,6 +67,12 @@ class TrustSession(BaselineSession):
             settings["expertise_support_scale"], settings["minimum_valid_clients"])
 
     def select(self, current):
+        if self.participation_schedule is not None:
+            selected = self.participation_schedule.get(str(current))
+            if (not selected or selected != sorted(set(selected)) or not set(selected) <= set(self.counts)
+                    or current == 1 and set(selected) != set(self.counts)):
+                raise ValueError("Invalid frozen participation schedule")
+            return list(selected)
         return sorted(self.counts) if current == 1 else super().select(current)
 
     def state_dict(self):
@@ -93,12 +103,13 @@ class TrustSession(BaselineSession):
     def create_aggregator(self, assessments, root):
         if self.method in ("adaptive", "frozen"):
             return FixedWeightAggregator(self.config.workspace, self.directory, self.method, self.counts,
-                                         self.settings["weight_floor"], self.frozen), assessments
+                                         self.settings["weight_floor"], self.frozen, self.policy), assessments
         return BaselineAggregator(self.config.workspace, self.directory, self.method, self.counts,
                                   self.values["trim_fraction"], root), ()
 
     def execute(self, current, parent_ref, parent):
         selected, updates, reports, invalid = self.select(current), [], {}, {}
+        clipping = {}
         prior = self.reputation.prior()
         training_seconds = 0.
         for client in selected:
@@ -110,17 +121,29 @@ class TrustSession(BaselineSession):
             except (ValueError, KeyError) as exc:
                 invalid[client] = str(exc)
                 continue
+            if self.policy.clipping_threshold is not None:
+                from edgefl.learning.metrics import norm
+                original = update
+                raw_norm = norm(delta)
+                factor = min(1., self.policy.clipping_threshold / raw_norm) if raw_norm else 1.
+                delta = {k: v * factor for k, v in delta.items()}
+                path = self.directory / f"clipped-{current:04d}-{client}.pt"
+                checkpoints.save(path, {"delta": delta})
+                update = replace(update, delta=checkpoints.artifact(self.config.workspace, path))
+                clipping[client] = {"submitted": asdict(original.delta), "applied": asdict(update.delta),
+                                    "submitted_norm": raw_norm, "applied_norm": norm(delta), "factor": factor,
+                                    "threshold": self.policy.clipping_threshold}
             updates.append(update)
             reports[client] = {**self.trainer.diagnostics[client], "update": magnitude(delta, parent), "transmitted_bytes": update.transmitted_bytes}
         prefix = self.directory / f"assessment-{current:04d}"
-        write_json(prefix.with_suffix(".submissions.json"), {"selected": selected, "invalid": invalid, "updates": [asdict(u) for u in updates]})
+        write_json(prefix.with_suffix(".submissions.json"), {"selected": selected, "invalid": invalid, "updates": [asdict(u) for u in updates], "clipping": clipping})
         if len(updates) < self.settings["minimum_valid_clients"]:
             raise ValueError("Insufficient valid clients for peer risk")
         started = time.perf_counter()
         observation = self.scorer.observe(ScoringRequest(self.trusted_ref, parent_ref, tuple(updates), self.comp))
         invalid.update(observation["invalid_predictions"])
         updates = [u for u in updates if u.client_id not in invalid]
-        assessments = self.scorer.assessments(observation, self.calibration, prior) if self.calibration else ()
+        assessments = self.scorer.assessments(observation, self.calibration, prior, self.policy.signals) if self.calibration else ()
         if self.values["device"] == "cuda":
             import torch
             torch.cuda.synchronize()
@@ -141,7 +164,7 @@ class TrustSession(BaselineSession):
         if self.method == "frozen":
             self.frozen = dict(aggregate.frozen)
         transitions = ()
-        if self.calibration:
+        if self.calibration and self.policy.reputation:
             pending, transitions = self.reputation.propose(current, risks, invalid, selected)
             self.reputation.load_state_dict(pending)
         events = {c: self.trainer.events[c] for c in selected}
