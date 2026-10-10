@@ -1,0 +1,13 @@
+{
+  "schema_version": "phase-f.v1",
+  "scope": "phase_f",
+  "phase_e_config": "configs/phase_e.json",
+  "output": "runs/phase_f",
+  "population_size": 24,
+  "offspring_generations": 8,
+  "weight_cap": 0.5,
+  "crossover_probability": 0.9,
+  "crossover_eta": 20,
+  "mutation_eta": 20,
+  "refill_multiplier": 100
+}
