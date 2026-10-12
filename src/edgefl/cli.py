@@ -15,6 +15,12 @@ from edgefl.pipelines.phase_c_cli import (COMMANDS as PHASE_C_COMMANDS,
 from edgefl.pipelines.phase_d_cli import (COMMANDS as PHASE_D_COMMANDS,
                                          add_commands as add_phase_d_commands,
                                          execute as execute_phase_d)
+from edgefl.pipelines.phase_e_cli import (COMMANDS as PHASE_E_COMMANDS,
+                                         add_commands as add_phase_e_commands,
+                                         execute as execute_phase_e)
+from edgefl.pipelines.phase_f_cli import (COMMANDS as PHASE_F_COMMANDS,
+                                         add_commands as add_phase_f_commands,
+                                         execute as execute_phase_f)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,8 +36,18 @@ def main(argv: list[str] | None = None) -> int:
     add_commands(sub)
     add_phase_c_commands(sub)
     add_phase_d_commands(sub)
+    add_phase_e_commands(sub)
+    add_phase_f_commands(sub)
     args = parser.parse_args(argv)
     try:
+        if args.command in PHASE_F_COMMANDS:
+            result = execute_phase_f(args)
+            print(json.dumps(result, indent=2))
+            return 1 if result.get("status") in ("FAIL", "UNSUCCESSFUL", "UNRESOLVED") else 0
+        if args.command in PHASE_E_COMMANDS:
+            result = execute_phase_e(args)
+            print(json.dumps(result, indent=2))
+            return 1 if result.get("status") in ("FAIL", "UNSUCCESSFUL", "UNRESOLVED") else 0
         if args.command in PHASE_D_COMMANDS:
             result = execute_phase_d(args)
             print(json.dumps(result, indent=2))

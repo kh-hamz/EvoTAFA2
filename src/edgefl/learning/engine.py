@@ -1,22 +1,18 @@
 """Shared clean training orchestration with immutable epoch/round boundaries."""
 
-import math
 import time
 from dataclasses import asdict
 import psutil
 import torch
 from torch import nn
 from edgefl.config import workspace_path
-from edgefl.contracts.records import ClientManifest, PartitionRef, Partition
-from edgefl.contracts.interfaces import TrainingRequest, AggregationRequest
 from edgefl.data.storage import read_json, write_json
 from edgefl.learning import checkpoints
 from edgefl.learning.models import build, compatibility, configure
-from edgefl.learning.training import LocalTrainer, ServerReference, adam, train_epochs
-from edgefl.learning.aggregation import BaselineAggregator
+from edgefl.learning.training import adam, train_epochs
+from edgefl.learning.federated import BaselineSession
 from edgefl.learning.metrics import evaluate, magnitude, weight_change
 from edgefl.learning.storage import artifact, reference, implementation_hash
-from edgefl.reproducibility import derive_seed
 
 
 def sync(device):
@@ -50,7 +46,8 @@ def selection_key(metrics, step):
     return (metrics["macro_f1"], -metrics["benign_fpr"], -step)
 
 
-def run(config, data, prepared, initialization, stage, method, seed, resume=None):
+def run(config, data, prepared, initialization, stage, method, seed, resume=None,
+        session_factory=None, artifact_policy=None):
     values, spec = config.values, data.spec
     environment = configure(values)
     write_json(stage.directory / "runtime.json", environment)
@@ -109,20 +106,24 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
         metrics, timings = evaluate_roles(model, views, spec, values)
         history.append({"step": 0, "metrics": metrics, "evaluation_seconds": timings})
     target = values["centralized_epochs"] if central else values["rounds"]
-    clients = {c: data.view("local_train", c) for c in data.clients} if not central else {}
-    trainer = LocalTrainer(config.workspace, stage.directory, clients, comp, values, seed,
-                           values["fedprox_mu"] if method == "fedprox" else 0)
-    trusted = data.view("trusted") if method == "fltrust" else None
-    root_service = ServerReference(trusted, values, seed, comp) if trusted is not None else None
     data_ref = checkpoints.artifact(config.workspace, artifact(config, prepared, "data.json"))
+    session = None if central else (session_factory or BaselineSession)(config, data, stage.directory, comp, data_ref, method, seed)
+    if session and resume:
+        session.load_state_dict(resume[0].get("phase_state", {}))
+    phase = artifact_policy.phase if artifact_policy else "phase-d"
     boundary_path = stage.directory / f"boundary-{step:04d}.pt"
-    checkpoints.save(boundary_path, {"model": checkpoints.cpu_state(model)})
+    boundary = {**resume[0], "model": checkpoints.cpu_state(model)} if resume else {"model": checkpoints.cpu_state(model)}
+    if artifact_policy:
+        boundary["phase_state"] = session.state_dict() if session else {}
+    checkpoints.save(boundary_path, boundary)
     failed = None
     for current in range(step + 1, target + 1):
         started = time.perf_counter()
         parent = checkpoints.cpu_state(model)
         training_seconds, root_seconds, aggregation_seconds = 0.0, 0.0, 0.0
         client_reports, weights, root_report = {}, None, None
+        extra = {}
+        prior_session_state = session.state_dict() if session else {}
         try:
             if central:
                 tick = time.perf_counter()
@@ -131,33 +132,10 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
                 sync(values["device"])
                 training_seconds = time.perf_counter() - tick
             else:
-                generator = torch.Generator().manual_seed(derive_seed(seed, "participation", round_id=current))
-                n = max(1, math.ceil(len(data.clients) * values["participation"]))
-                selected = sorted(data.clients[i] for i in torch.randperm(len(data.clients), generator=generator).tolist()[:n])
                 parent_ref = checkpoints.artifact(config.workspace, boundary_path)
-                updates = []
-                for client in selected:
-                    manifest = ClientManifest(client, data_ref, PartitionRef(data_ref, Partition.LOCAL_TRAIN),
-                                              PartitionRef(data_ref, Partition.LOCAL_VALIDATION), (), seed)
-                    request = TrainingRequest(manifest, current, parent_ref, comp,
-                                               derive_seed(seed, "minibatch", client=client, round_id=current))
-                    update = trainer.train(request)
-                    updates.append(update)
-                    delta = checkpoints.load(workspace_path(config.workspace, update.delta.path), update.delta.sha256)["delta"]
-                    client_reports[client] = {**trainer.diagnostics[client], "update": magnitude(delta, parent), "transmitted_bytes": update.transmitted_bytes}
-                training_seconds = sum(u.training_seconds for u in updates)
-                root_delta = None
-                if root_service:
-                    tick = time.perf_counter()
-                    root_delta, root_report = root_service.update(parent, current)
-                    sync(values["device"])
-                    root_seconds = time.perf_counter() - tick
-                aggregate = BaselineAggregator(config.workspace, stage.directory, method,
-                                               {c: len(v) for c, v in clients.items()}, values["trim_fraction"], root_delta)
-                request = AggregationRequest(current, parent_ref, comp, tuple(updates), (),
-                                             PartitionRef(data_ref, Partition.TRUSTED) if root_service else None,
-                                             derive_seed(seed, "evolution", round_id=current))
-                result = aggregate.aggregate(request)
+                executed = session.execute(current, parent_ref, parent)
+                result, client_reports, training_seconds = executed.result, executed.client_reports, executed.training_seconds
+                root_report, root_seconds, extra = executed.root_report, executed.root_seconds, executed.extra
                 state = checkpoints.load(workspace_path(config.workspace, result.checkpoint.path), result.checkpoint.sha256)["model"]
                 model.load_state_dict(state)
                 agg_report = read_json(workspace_path(config.workspace, result.diagnostics.path))
@@ -171,7 +149,7 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
             checkpoint_path = stage.directory / f"checkpoint-{current:04d}.pt"
             if best is None or candidate_key > tuple(best["key"]):
                 best = {"step": current, "key": list(candidate_key), "path": checkpoint_path.relative_to(config.workspace).as_posix()}
-            report = {"schema_version": "phase-d.diagnostics.v1", "step": current, "identity": stage.identity,
+            report = {"schema_version": phase + ".diagnostics.v1", "step": current, "identity": stage.identity,
                       "method": method, "seed": seed, "metrics": metrics, "client_reports": client_reports,
                       "training": training_report, "root": root_report, "weights": weights,
                       "weight_change": weight_change(previous_weights, weights),
@@ -180,6 +158,7 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
                                  "aggregation_including_aggregate_checkpoint": aggregation_seconds, "evaluation": evaluation_times},
                       "memory": {"rss_bytes": psutil.Process().memory_info().rss,
                                  "cuda_peak_bytes": torch.cuda.max_memory_allocated() if values["device"] == "cuda" else None}}
+            report.update(extra)
             history.append(report)
             tick = time.perf_counter()
             payload = {"model": state, "optimizer": optimizer.state_dict() if central else {}, "step": current,
@@ -187,18 +166,27 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
                        "compatibility": asdict(comp), "environment": environment, "initialization": initial_ref,
                        "prepared": prepared["artifacts"]["data.json"], "cpu_rng": torch.get_rng_state(),
                        "cuda_rng": torch.cuda.get_rng_state_all() if values["device"] == "cuda" else []}
+            if artifact_policy:
+                payload["phase_state"] = session.state_dict() if session else {}
             checkpoints.save(checkpoint_path, payload)
             report["timing"]["checkpoint"] = time.perf_counter() - tick
             report["timing"]["round_elapsed"] = time.perf_counter() - started
+            if artifact_policy:
+                scoring = extra.get("assessment", {}).get("seconds", 0.)
+                passive = extra.get("assessment", {}).get("usage") == "passive_diagnostics"
+                report["timing"]["scoring"] = scoring
+                report["timing"]["round_excluding_passive_scoring"] = report["timing"]["round_elapsed"] - (scoring if passive else 0.)
             write_json(stage.directory / f"round-{current:04d}.json", report)
             write_json(stage.directory / f"resume-{current:04d}.json",
-                       {"schema_version": "phase-d.resume.v1", "configuration_sha256": config.sha256,
-                        "implementation_sha256": implementation_hash(),
+                       {"schema_version": phase + ".resume.v1", "configuration_sha256": artifact_policy.configuration_sha256 if artifact_policy else config.sha256,
+                        "implementation_sha256": artifact_policy.implementation_sha256 if artifact_policy else implementation_hash(),
                         "checkpoint": reference(config.workspace, checkpoint_path), "identity": stage.identity,
                         "gate": stage.gate, "inputs": stage.inputs})
             boundary_path = checkpoint_path
             previous_weights, step = weights, current
         except (ValueError, RuntimeError) as exc:
+            if session:
+                session.load_state_dict(prior_session_state)
             failed = {"step": current, "reason": str(exc), "retained_parent": reference(config.workspace, boundary_path)}
             write_json(stage.directory / "failed_round.json", failed)
             break
