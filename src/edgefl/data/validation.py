@@ -166,6 +166,36 @@ def validate(paths: dict[str, Path], summaries: dict, directory: Path, purge: in
                 elif report["folds"][fold]["feasible"]:
                     usable_folds += 1
         require(usable_folds > 0, "No feasible split with a benign-supported trusted panel")
+        if "closed_set" in paths:
+            expected_scope = summaries["splits_a"]["folds"]["protocol_a"]
+            declared_labels = set(expected_scope["closed_set_manifest_classes"])
+            counts, labels, independent = Counter(), {}, {}
+            seen_closed, group_roles = set(), {}
+            for row in rows(paths["closed_set"]):
+                oid, role, label, gid = row["observation_id"], row["partition"], row["label"], row["group_id"]
+                require(oid not in seen_closed, "Closed-set observation repeated")
+                seen_closed.add(oid)
+                original = db.execute("SELECT label,capture,session,gid,role FROM split WHERE protocol='a' AND fold=? AND oid=?",
+                                      (row["fold"], oid)).fetchone()
+                require(original is not None and original[:4] == (label, row["capture_id"], row["session_id"], gid),
+                        "Closed-set provenance differs from global split")
+                require(role == "excluded" or original is not None and role == original[4], "Closed-set role was reassigned")
+                group_roles.setdefault(gid, set()).add(role)
+                counts[role] += 1
+                if role in ROLES:
+                    require(label in declared_labels, "Unsupported label retained in closed-set scope")
+                    labels.setdefault(label, Counter())[role] += 1
+                    independent.setdefault(label, {}).setdefault(role, set()).add(gid)
+            require(len(seen_closed) == verified_count, "Closed-set manifest coverage mismatch")
+            require(all(len(roles) == 1 for roles in group_roles.values()), "Closed-set group crosses roles")
+            require(dict(counts) == expected_scope["closed_set_counts"], "Closed-set count report mismatch")
+            require({label: dict(values) for label, values in labels.items()} == expected_scope["closed_set_class_counts"],
+                    "Closed-set class report mismatch")
+            require({label: {role: len(groups) for role, groups in roles.items()} for label, roles in independent.items()}
+                    == expected_scope["closed_set_independent_groups"], "Closed-set group report mismatch")
+            feasible = "Normal" in declared_labels and len(declared_labels) >= 2 and all(
+                labels.get(label, {}).get(role, 0) for label in declared_labels for role in ROLES)
+            require(expected_scope["closed_set_feasible"] is feasible, "Closed-set feasibility report mismatch")
         status = "FAIL" if errors else "PASS_WITH_LIMITATIONS" if limitations else "PASS"
         return {"status":status,"errors":errors,"limitations":limitations,
                 "verified_observations":verified_count,"excluded_observations":quarantined,

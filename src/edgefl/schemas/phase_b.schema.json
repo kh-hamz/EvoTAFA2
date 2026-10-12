@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "scope", "archive", "selected", "source_root", "pairings", "label_aliases", "seed", "temporal_block_seconds", "purge_seconds", "session_inactivity_seconds", "panel_per_class", "output"],
   "properties": {
-    "schema_version": {"const": "phase-b.v1"},
+    "schema_version": {"const": "phase-b.v2"},
     "scope": {"const": "phase_b"},
     "archive": {"type": "string", "minLength": 1},
     "source_root": {"type": "string", "minLength": 1},

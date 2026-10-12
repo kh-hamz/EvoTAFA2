@@ -77,16 +77,19 @@ def implementation_hash(stage: str | None = None) -> str:
         "audit":("audit", "inventory"),
         "provenance":("provenance", "inventory"),
         "verify-captures":("pcap", "verification", "inventory"),
+        "diagnose-captures":("pcap", "verification", "inventory", "capture_diagnostics"),
         "group":("grouping",),
         "global-split":("splitting",),
         "trusted-panel":("trusted_panel",),
         "validate-phase-b":("validation", "origin_validation", "inventory", "splitting"),
     }
-    pipelines = {"audit":"audit","provenance":"provenance","verify-captures":"captures",
+    pipelines = {"audit":"audit","provenance":"provenance","verify-captures":"captures", "diagnose-captures":"diagnostics",
                  "group":"group","global-split":"split","trusted-panel":"panel","validate-phase-b":"validate"}
-    paths = [package/"data"/(name+".py") for name in ("config","storage","schema","csv_reader")]
+    paths = [package/"data"/(name+".py") for name in ("config","storage","schema","csv_reader","integrity")]
     paths += [package/"contracts/phase_b.py",package/"schemas/phase_b.schema.json",
               package/"pipelines/phase_b_common.py",package/"reproducibility.py"]
+    if stage == "verify-captures":
+        paths.append(package / "data/capture_diagnostics.py")
     if stage in modules:
         paths += [package/"data"/(name+".py") for name in modules[stage]]
         paths += [package/"pipelines"/("phase_b_"+pipelines[stage]+".py")]
@@ -96,11 +99,15 @@ def implementation_hash(stage: str | None = None) -> str:
                                         for p in sorted(set(paths))]).encode()).hexdigest()
 
 
-def load_completion(root: Path, path: Path, stage: str, config_hash: str, seen=None) -> dict:
+def load_completion(root: Path, path: Path, stage: str, config_hash: str, seen=None,
+                    context=None) -> dict:
     resolved = workspace_path(root, path.relative_to(root).as_posix())
     seen = set() if seen is None else seen
     if resolved in seen:
         raise ValueError("Cyclic stage lineage")
+    cache_key = (resolved, stage, config_hash)
+    if context is not None and cache_key in context.completions:
+        return context.completions[cache_key]
     seen.add(resolved)
     metadata = read_json(resolved)
     expected = {"schema_version","status","stage","dataset","configuration_sha256","implementation_sha256","inputs","options","artifacts","eligible_for_training"}
@@ -113,9 +120,22 @@ def load_completion(root: Path, path: Path, stage: str, config_hash: str, seen=N
         raise ValueError("Stale Phase B configuration")
     if metadata.get("implementation_sha256") != implementation_hash(stage):
         raise ValueError("Stale Phase B implementation")
+    dependencies = {
+        "audit": {}, "provenance": {"audit": "audit"},
+        "verify-captures": {"audit": "audit", "provenance": "provenance"},
+        "diagnose-captures": {"audit": "audit", "provenance": "provenance"},
+        "group": {"provenance": "provenance", "evidence": "verify-captures"},
+        "global-split": {"groups": "group"}, "trusted-panel": {"splits": "global-split"},
+        "validate-phase-b": {"audit": "audit", "provenance": "provenance", "evidence": "verify-captures",
+                             "groups": "group", "splits_a": "global-split", "splits_b": "global-split",
+                             "panel_a": "trusted-panel", "panel_b": "trusted-panel"},
+    }
+    required = dependencies.get(stage)
+    if required is None or not set(required) <= set(metadata["inputs"]):
+        raise ValueError("Missing or unknown Phase B stage dependencies")
     for name, item in metadata["artifacts"].items():
         checked(root, item, name)
-    for item in metadata["inputs"].values():
+    for key, item in metadata["inputs"].items():
         upstream = checked(root, item)
         if item["role"] == "foundation":
             load_foundation(root, upstream)
@@ -123,7 +143,13 @@ def load_completion(root: Path, path: Path, stage: str, config_hash: str, seen=N
         if item["role"] != "completion":
             raise ValueError("Unknown upstream role")
         upstream_meta = read_json(upstream)
-        load_completion(root, upstream, upstream_meta["stage"], config_hash, seen.copy())
+        if upstream_meta["stage"] != required.get(key):
+            raise ValueError("Phase B upstream stage mismatch")
+        if upstream_meta["stage"] != "audit" and upstream_meta["dataset"] != metadata["dataset"]:
+            raise ValueError("Phase B upstream dataset mismatch")
+        load_completion(root, upstream, required[key], config_hash, seen.copy(), context)
+    if context is not None:
+        context.completions[cache_key] = metadata
     return metadata
 
 

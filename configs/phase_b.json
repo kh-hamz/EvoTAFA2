@@ -1,5 +1,5 @@
 {
-  "schema_version": "phase-b.v1",
+  "schema_version": "phase-b.v2",
   "scope": "phase_b",
   "archive": "archive",
   "selected": {

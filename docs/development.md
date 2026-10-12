@@ -1,16 +1,18 @@
 # Development workflow
 
-Phase B is implemented in separate domain and orchestration modules. See
-[Phase B architecture, contracts, and commands](phase_b.md) for the current dataset
-pipelines. The foundation specification below records the Phase A baseline;
-its planned data boundaries are now implemented for roadmap steps 4-9.
+Phases B and C are implemented in separate domain and orchestration modules. See
+[Phase B architecture, contracts, and commands](phase_b.md) and
+[Phase C architecture and commands](phase_c.md). The foundation specification below
+records the Phase A baseline; runnable stages now extend through the pretraining gate,
+subject to upstream acceptance.
 
 ## Supported foundation environment
 
 Python 3.11+ is declared; Phase A was executed with Python 3.12.6 on Windows.
-The only direct runtime dependency is jsonschema 4.23.0. requirements.lock records
-its installed dependency versions. Scientific/training packages are deliberately
-not installed until their phases need them. No global Python packages are modified.
+The foundation dependency is jsonschema 4.23.0; requirements.lock preserves that
+environment. Phase D's optional training dependencies and exact installed versions
+are separate in requirements-phase-d.lock. See [Phase D setup](phase_d.md). No global
+Python packages are modified.
 
 From the project root in PowerShell:
 
@@ -89,13 +91,45 @@ those differences and define numerical tolerances during model implementation.
 7. Run the focused tests and the existing Phase A boundary tests.
 8. Update pipeline availability and acceptance evidence only after the stage passes.
 
+For future model pipelines, keep software tests, real-data acceptance, and clean-learning
+review as separate evidence. Tiny synthetic tests may exercise models and contracts, but
+cannot authorize real-data experiments. Use the [readiness specification](phase_d_readiness_refinement_plan.md)
+for phase ownership and the [diagnostic definitions](interfaces.md#future-round-diagnostics)
+when implementing the training engine. Add behavioral tests in their owning phase rather
+than tests that merely match documentation wording.
+
 Keep notebooks exploratory: move accepted transformations into tested source modules.
 Avoid one large preprocess/train/evaluate function. Do not add fake success stubs for
 planned pipelines. Fail loudly on unsupported stages instead of producing empty outputs.
 
 ## Next implementation boundary
 
-The next step is Phase B source registration and streaming audit. It must separately
-address semantic schema issues, provenance recovery, observation duplication, session
-construction, and the two split protocols before any client or model work.
-No Phase B work was performed by the Phase A commands or checks.
+Phase D software is implemented, but it cannot execute on the current real-data
+artifacts: Phase B validation is FAIL, so no real Phase C pretraining PASS exists.
+The evidence limitation must be resolved and Phases B-C rerun before real-data model
+experiments. Capture-recovery approval remains a separate checkpoint. Synthetic component
+tests may support development without changing that requirement.
+Phase D exposes separate learning commands described in [its guide](phase_d.md).
+There is no generic train command. Phases E-H remain planned, pending applicable
+Phase D acceptance and separate implementation authorization.
+
+Every future real-data experiment entrypoint, including resume, must call
+load_training_ready from edgefl.client_data.storage with explicit dataset, task, fold,
+and scenario expectations. Missing, stale, incompatible, or ineligible inputs block
+execution; do not load a raw CSV as a fallback or manually override eligibility.
+
+Phase D completion covers sanity models, FedAvg, FedProx, median, trimmed mean, and
+FLTrust, with correctness and clean-learning evidence. Review centralized behavior,
+then near-IID FedAvg, then non-IID FedAvg. Unresolved learning behavior blocks the affected
+condition. An explained negative finding may proceed with documented limitations, but
+never overrides failed software or data checks. E/F methods are not D prerequisites.
+
+Measure training and evaluation costs in D. Profile one representative completed actual
+candidate-evaluation/search round in F before scaling G, recording workload/environment,
+candidate counts, component and total time, memory, warm-up, and projected matrix cost.
+Keep current development defaults until explicit measured revisions are recorded before
+main comparisons. Neither final-test results nor hidden runtime adjustments choose budgets.
+
+The 2026-10-04 refinement changes documentation only. Existing contract versions,
+configuration, tests, and historical acceptance results remain intact. Future source and
+protocol snapshots capture the revised documents; do not rewrite historical snapshots.

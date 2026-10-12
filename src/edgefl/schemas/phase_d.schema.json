@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scope", "phase_c_config", "output", "variant", "device", "threads", "seeds", "hidden_layers", "learning_rate", "batch_size", "local_epochs", "centralized_epochs", "rounds", "participation", "fedprox_mu", "trim_fraction", "root_epochs"],
+  "properties": {
+    "schema_version": {"const": "phase-d.v1"},
+    "scope": {"const": "phase_d"},
+    "phase_c_config": {"type": "string", "minLength": 1},
+    "output": {"type": "string", "minLength": 1},
+    "variant": {"enum": ["base", "strict"]},
+    "device": {"enum": ["cpu", "cuda"]},
+    "threads": {"type": "integer", "minimum": 1},
+    "seeds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 4294967295}},
+    "hidden_layers": {"const": [128, 64]},
+    "learning_rate": {"type": "number", "exclusiveMinimum": 0},
+    "batch_size": {"type": "integer", "minimum": 1},
+    "local_epochs": {"type": "integer", "minimum": 1},
+    "centralized_epochs": {"type": "integer", "minimum": 1},
+    "rounds": {"type": "integer", "minimum": 1},
+    "participation": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "fedprox_mu": {"type": "number", "minimum": 0},
+    "trim_fraction": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 0.5},
+    "root_epochs": {"type": "integer", "minimum": 1}
+  }
+}

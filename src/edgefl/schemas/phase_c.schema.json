@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "scope",
+    "phase_b_config",
+    "output",
+    "seed",
+    "clients",
+    "scenarios",
+    "max_partition_attempts",
+    "minimum_client_observations",
+    "minimum_training_observations",
+    "minimum_groups_per_client",
+    "local_validation_fraction",
+    "preprocessing",
+    "support_policy",
+    "closed_set_scope",
+    "near_iid_limits"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "phase-c.v2"
+    },
+    "scope": {
+      "const": "phase_c"
+    },
+    "phase_b_config": {
+      "type": "string",
+      "minLength": 1
+    },
+    "output": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "clients": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "scenarios": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "near_iid"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "alpha"
+            ],
+            "properties": {
+              "kind": {
+                "const": "dirichlet"
+              },
+              "alpha": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "specialists_per_attack"
+            ],
+            "properties": {
+              "kind": {
+                "const": "specialist"
+              },
+              "specialists_per_attack": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "max_partition_attempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "minimum_client_observations": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "minimum_training_observations": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "minimum_groups_per_client": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "local_validation_fraction": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 0.5
+    },
+    "preprocessing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "numeric_imputation",
+        "scaling",
+        "max_categories",
+        "identifier_payload_exclusions",
+        "strict_shortcut_exclusions"
+      ],
+      "properties": {
+        "numeric_imputation": {
+          "const": "mean"
+        },
+        "scaling": {
+          "const": "standard"
+        },
+        "max_categories": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "identifier_payload_exclusions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "strict_shortcut_exclusions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "support_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "assigned",
+        "training",
+        "validation"
+      ],
+      "properties": {
+        "profile": {
+          "enum": [
+            "server_scored",
+            "local_binary_metrics"
+          ]
+        },
+        "assigned": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "benign",
+            "attack"
+          ],
+          "properties": {
+            "benign": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "attack": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "training": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "benign",
+            "attack"
+          ],
+          "properties": {
+            "benign": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "attack": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "benign",
+            "attack"
+          ],
+          "properties": {
+            "benign": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "attack": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "closed_set_scope": {
+      "enum": [
+        "supported_classes",
+        "full_15"
+      ]
+    },
+    "near_iid_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximum_size_deviation",
+        "maximum_total_variation"
+      ],
+      "properties": {
+        "maximum_size_deviation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maximum_total_variation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

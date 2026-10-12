@@ -8,16 +8,18 @@ from edgefl.data import pcap
 from edgefl.data.csv_reader import header, records
 from edgefl.data.schema import evidence_key
 from edgefl.data.storage import database, rows, writer
+from edgefl.data.capture_diagnostics import CaptureDiagnostics
 
 
 def verify(root: Path, registry: dict, selected_role: str, provenance: Path, candidates: Path,
-           directory: Path, inactivity: int, progress=lambda **kw: None) -> dict:
+           directory: Path, inactivity: int, progress=lambda **kw: None, *, diagnostic=False, captures=None) -> dict:
     work = directory / "_work"
     work.mkdir(parents=True, exist_ok=True)
     tshark, capinfos = pcap.tool_identity("tshark", work), pcap.tool_identity("capinfos", work)
     selected_path = root / registry["selected"][selected_role]
     names = header(selected_path)
     db = database(work / "capture.sqlite")
+    anomaly_stream = reversal_stream = None
     db.executescript("""
     CREATE TABLE wanted(oid TEXT PRIMARY KEY, key TEXT, ekey TEXT, label TEXT,
                         source_record INTEGER,capture TEXT,stamp TEXT);
@@ -50,10 +52,17 @@ def verify(root: Path, registry: dict, selected_role: str, provenance: Path, can
                             row["label"], n, capture, stamp))
         db.commit()
         capture_reports, accepted = {}, set()
+        anomaly_stream, anomaly_output = writer(directory / "timing_anomalies.csv", (
+            "capture_id", "previous_frame", "frame", "previous_epoch", "epoch", "backward_seconds"))
+        reversal_stream, reversal_output = writer(directory / "anchor_reversals.csv", (
+            "capture_id", "previous_source_record", "source_record", "previous_frame", "frame", "source_time", "epoch"))
         for pair in registry["pairs"]:
             capture = pair["capture_id"]
+            if captures and capture not in captures:
+                continue
             progress(event="capture_start", capture=capture)
             report = {"pcap": pair["pcap"], "csv": pair["csv"]}
+            diagnostics = CaptureDiagnostics()
             try:
                 summary = work / "capinfos.txt"
                 pcap.run_tool([capinfos["path"], "-c", "-a", "-e", str(root / pair["pcap"])], summary, 120)
@@ -62,6 +71,9 @@ def verify(root: Path, registry: dict, selected_role: str, provenance: Path, can
                 counts, udp_sessions, protocols = Counter(), {}, Counter()
                 previous, first, last = None, None, None
                 for packet in pcap.packet_rows(packet_file):
+                    anomaly = diagnostics.packet(int(packet["frame.number"]), packet["frame.time_epoch"])
+                    if anomaly:
+                        anomaly_output.writerow({"capture_id": capture, **anomaly})
                     epoch = float(packet["frame.time_epoch"])
                     counts["packets"] += 1
                     number = packet.get("ip.proto","")
@@ -112,15 +124,25 @@ def verify(root: Path, registry: dict, selected_role: str, provenance: Path, can
                         continue
                     if previous_pair and (source_record <= previous_pair[0] or frame <= previous_pair[1]):
                         reversals += 1
+                        reversal_output.writerow({"capture_id": capture, "previous_source_record": previous_pair[0],
+                            "source_record": source_record, "previous_frame": previous_pair[1], "frame": frame,
+                            "source_time": stamp, "epoch": epoch})
+                    diagnostics.anchor(stamp, epoch)
                     offsets[str(pcap.clock_offset(stamp, epoch))] += 1
                     anchor_count += 1
                     previous_pair = current
                 report.update({"sequence_anchors": anchor_count, "sequence_reversals": reversals,
-                               "observed_clock_offsets_seconds": dict(offsets)})
+                               "observed_clock_offsets_seconds": dict(offsets), "diagnostics": diagnostics.summary()})
+                report["correspondence"] = {
+                    "wanted_observations": db.execute("SELECT count(*) FROM wanted WHERE capture=?", (capture,)).fetchone()[0],
+                    "unique_packet_keys": db.execute("SELECT count(*) FROM matched WHERE capture=? AND n=1", (capture,)).fetchone()[0],
+                    "ambiguous_packet_keys": db.execute("SELECT count(*) FROM matched WHERE capture=? AND n>1", (capture,)).fetchone()[0],
+                    "unmatched_observations": db.execute("SELECT count(*) FROM wanted w LEFT JOIN matched m ON w.capture=m.capture AND w.ekey=m.ekey WHERE w.capture=? AND m.frame IS NULL", (capture,)).fetchone()[0]}
                 if (anchor_count >= 2 and not reversals and counts["timestamp_regressions"] == 0
                         and len(offsets) == 1 and "None" not in offsets):
-                    accepted.add(capture)
-                    report["status"] = "verified"
+                    if not diagnostic:
+                        accepted.add(capture)
+                    report["status"] = "diagnostic_only" if diagnostic else "verified"
                 else:
                     report.update(status="quarantined",
                                   reason="insufficient_or_inconsistent_packet_sequence_and_clock_evidence")
@@ -128,6 +150,8 @@ def verify(root: Path, registry: dict, selected_role: str, provenance: Path, can
                 report.update(status="quarantined", reason=str(exc))
             capture_reports[capture] = report
             progress(event="capture_complete", capture=capture, status=report["status"])
+        anomaly_stream.close()
+        reversal_stream.close()
         totals = Counter()
         stream, out = writer(directory / "evidence.csv", MANIFEST_FIELDS["evidence"])
         with stream:
@@ -149,6 +173,10 @@ def verify(root: Path, registry: dict, selected_role: str, provenance: Path, can
                 totals[state] += 1
         return {"statuses": dict(totals), "tools": {"tshark": tshark, "capinfos": capinfos},
                 "captures": capture_reports,
+                "diagnostic_only": diagnostic, "recovery_authorized": False,
                 "timestamp_policy": "Packet epoch supplies the date; CSV clock offset is observed, not assumed."}
     finally:
+        for stream in (anomaly_stream, reversal_stream):
+            if stream is not None:
+                stream.close()
         db.close()
