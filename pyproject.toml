@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "edgeiiot-fl-research"
 version = "0.1.0"
-description = "Phase A research contracts and reproducibility foundation for Edge-IIoTset FL"
+description = "Research foundation and Phase B dataset verification for Edge-IIoTset FL"
 requires-python = ">=3.11"
 dependencies = ["jsonschema==4.23.0"]
 

@@ -1,8 +1,11 @@
 # Edge-IIoTset FL Research
 
-Phase A (roadmap steps 1–3) establishes the research and software foundation.
-The only executable operations are configuration validation, pipeline inspection,
-and creation of foundation metadata. No dataset processing or learning is implemented.
+Phase A provides the research contracts and reproducibility foundation.
+Phase B implements source registration, streaming audits, provenance and capture
+verification, isolated groups, both global split protocols, trusted panels, and
+the final dataset gate. Client allocation and all learning remain outside scope.
+
+Read [Phase B architecture and commands](docs/phase_b.md) for execution and debugging.
 
 ## Start here
 

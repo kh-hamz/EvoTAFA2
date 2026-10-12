@@ -1,4 +1,4 @@
-"""Phase A CLI: validate configuration, inspect stages, and prepare foundation metadata."""
+"""Research foundation and Phase B dataset-verification commands."""
 
 import argparse
 import json
@@ -8,6 +8,7 @@ from pathlib import Path
 from edgefl.config import ConfigurationError, load_config, workspace_path
 from edgefl.pipelines.catalog import describe_pipelines
 from edgefl.runs import initialize_foundation_run
+from edgefl.pipelines.phase_b_cli import COMMANDS, add_commands, execute as execute_phase_b
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -20,8 +21,13 @@ def main(argv: list[str] | None = None) -> int:
     initialize = sub.add_parser("init-run", help="Create a foundation record, not a training run")
     initialize.add_argument("--config", default="configs/phase_a.json")
     initialize.add_argument("--seed", type=int, default=11)
+    add_commands(sub)
     args = parser.parse_args(argv)
     try:
+        if args.command in COMMANDS:
+            result = execute_phase_b(args)
+            print(json.dumps(result, indent=2))
+            return 1 if result.get("status") == "FAIL" else 0
         if args.command == "pipelines":
             print(json.dumps(describe_pipelines(), indent=2))
             return 0
