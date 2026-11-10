@@ -8,19 +8,22 @@ from pathlib import Path
 from edgefl.config import ConfigurationError, load_config, workspace_path
 from edgefl.pipelines.catalog import describe_pipelines
 from edgefl.runs import initialize_foundation_run
-from edgefl.pipelines.phase_b_cli import COMMANDS, add_commands, execute as execute_phase_b
-from edgefl.pipelines.phase_c_cli import (COMMANDS as PHASE_C_COMMANDS,
+from edgefl.pipelines.phaseB.phase_b_cli import COMMANDS, add_commands, execute as execute_phase_b
+from edgefl.pipelines.phaseC.phase_c_cli import (COMMANDS as PHASE_C_COMMANDS,
                                           add_commands as add_phase_c_commands,
                                           execute as execute_phase_c)
-from edgefl.pipelines.phase_d_cli import (COMMANDS as PHASE_D_COMMANDS,
+from edgefl.pipelines.phaseD.phase_d_cli import (COMMANDS as PHASE_D_COMMANDS,
                                          add_commands as add_phase_d_commands,
                                          execute as execute_phase_d)
-from edgefl.pipelines.phase_e_cli import (COMMANDS as PHASE_E_COMMANDS,
+from edgefl.pipelines.phaseE.phase_e_cli import (COMMANDS as PHASE_E_COMMANDS,
                                          add_commands as add_phase_e_commands,
                                          execute as execute_phase_e)
 from edgefl.pipelines.phase_f_cli import (COMMANDS as PHASE_F_COMMANDS,
                                          add_commands as add_phase_f_commands,
                                          execute as execute_phase_f)
+from edgefl.pipelines.phaseG.phase_g_cli import (COMMANDS as PHASE_G_COMMANDS,
+                                               add_commands as add_phase_g_commands,
+                                               execute as execute_phase_g)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -38,8 +41,13 @@ def main(argv: list[str] | None = None) -> int:
     add_phase_d_commands(sub)
     add_phase_e_commands(sub)
     add_phase_f_commands(sub)
+    add_phase_g_commands(sub)
     args = parser.parse_args(argv)
     try:
+        if args.command in PHASE_G_COMMANDS:
+            result = execute_phase_g(args)
+            print(json.dumps(result, indent=2))
+            return 1 if result.get("status") in ("FAIL", "UNSUCCESSFUL", "UNRESOLVED", "BLOCKED", "INCOMPLETE") else 0
         if args.command in PHASE_F_COMMANDS:
             result = execute_phase_f(args)
             print(json.dumps(result, indent=2))

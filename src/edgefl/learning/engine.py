@@ -123,6 +123,7 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
         training_seconds, root_seconds, aggregation_seconds = 0.0, 0.0, 0.0
         client_reports, weights, root_report = {}, None, None
         extra = {}
+        failed_aggregation = None
         prior_session_state = session.state_dict() if session else {}
         try:
             if central:
@@ -135,6 +136,9 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
                 parent_ref = checkpoints.artifact(config.workspace, boundary_path)
                 executed = session.execute(current, parent_ref, parent)
                 result, client_reports, training_seconds = executed.result, executed.client_reports, executed.training_seconds
+                if result.failure_reason:
+                    failed_aggregation = asdict(result.diagnostics)
+                    raise ValueError(result.failure_reason)
                 root_report, root_seconds, extra = executed.root_report, executed.root_seconds, executed.extra
                 state = checkpoints.load(workspace_path(config.workspace, result.checkpoint.path), result.checkpoint.sha256)["model"]
                 model.load_state_dict(state)
@@ -188,6 +192,8 @@ def run(config, data, prepared, initialization, stage, method, seed, resume=None
             if session:
                 session.load_state_dict(prior_session_state)
             failed = {"step": current, "reason": str(exc), "retained_parent": reference(config.workspace, boundary_path)}
+            if failed_aggregation:
+                failed["aggregation_diagnostics"] = failed_aggregation
             write_json(stage.directory / "failed_round.json", failed)
             break
     write_json(stage.directory / "history.json", history)

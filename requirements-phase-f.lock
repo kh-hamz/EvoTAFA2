@@ -1,0 +1,24 @@
+-r requirements-phase-d.lock
+pymoo==0.6.2
+scipy==1.18.1
+moocore==0.3.2
+autograd==1.9.1
+cma==4.5.0
+matplotlib==3.11.2
+alive_progress==3.3.0
+Deprecated==3.0.0
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.66.1
+kiwisolver==1.5.1
+packaging==26.3
+pillow==12.3.0
+pyparsing==3.3.3
+python-dateutil==2.9.0.post0
+cffi==2.1.1
+platformdirs==4.12.4
+about-time==4.2.1
+graphemeu==0.7.2
+wrapt==2.5.0
+pycparser==3.1
+six==1.17.0

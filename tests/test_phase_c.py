@@ -235,9 +235,9 @@ class ConfigurationAndScopeTests(unittest.TestCase):
         config = load(ROOT / "configs/phase_c.json", ROOT)
         self.assertEqual(config.values["clients"], 10)
         available = {stage.phase for stage in PIPELINES if stage.status == "available"}
-        self.assertEqual(available, {"A", "B", "C", "D", "E", "F"})
+        self.assertEqual(available, {"A", "B", "C", "D", "E", "F", "G"})
         self.assertTrue(all(stage.status == "planned" for stage in PIPELINES
-                            if stage.phase not in ("A", "B", "C", "D", "E", "F")))
+                            if stage.phase not in ("A", "B", "C", "D", "E", "F", "G")))
 
 
 if __name__ == "__main__":
