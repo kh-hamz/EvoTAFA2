@@ -1,0 +1,14 @@
+{
+  "schema_version": "phase-g.v1",
+  "scope": "phase_g",
+  "phase_f_config": "configs/phase_f.json",
+  "output": "runs/phase_g",
+  "dataset": "primary",
+  "global_split_seed": 42,
+  "seeds": [11, 22, 33, 44, 55],
+  "suites": ["main", "ablations", "sensitivity", "capture"],
+  "capture_folds": [],
+  "workers": 1,
+  "replication": "deferred",
+  "capture_scoring": "phase_h"
+}

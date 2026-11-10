@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "scope", "phase_f_config", "output", "dataset", "global_split_seed", "seeds", "suites", "capture_folds", "workers", "replication", "capture_scoring"],
+  "properties": {
+    "schema_version": {"const": "phase-g.v1"}, "scope": {"const": "phase_g"},
+    "phase_f_config": {"type": "string", "minLength": 1}, "output": {"type": "string", "minLength": 1},
+    "dataset": {"enum": ["primary", "smoke"]}, "global_split_seed": {"const": 42},
+    "seeds": {"const": [11, 22, 33, 44, 55]}, "workers": {"const": 1},
+    "suites": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["main", "ablations", "sensitivity", "capture"]}},
+    "capture_folds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"}},
+    "replication": {"const": "deferred"}, "capture_scoring": {"const": "phase_h"},
+    "evidence_kind": {"enum": ["research", "fixture"]},
+    "fixture_cases": {"type": "array", "items": {"type": "object"}}
+  }
+}
